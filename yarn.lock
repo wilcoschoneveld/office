@@ -9,6 +9,20 @@
   dependencies:
     tslib "^2.1.0"
 
+"@babylonjs/loaders@5.0.0-alpha.17":
+  version "5.0.0-alpha.17"
+  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-5.0.0-alpha.17.tgz#d014ed10192411630107b234980cef19c379e2c6"
+  integrity sha512-yvF7J0ODR9C1UkNZjukk54BOlh8LI0haw8ivLSHEi2eNR+I41QGg9JW69mPfzDaiu7GZE5GVilQuZOgQpT0r5A==
+  dependencies:
+    "@babylonjs/core" "5.0.0-alpha.17"
+    babylonjs-gltf2interface "5.0.0-alpha.17"
+    tslib "^2.1.0"
+
+babylonjs-gltf2interface@5.0.0-alpha.17:
+  version "5.0.0-alpha.17"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-5.0.0-alpha.17.tgz#50ae62f5989c78360011343e6ab94bf0d257cfe0"
+  integrity sha512-N0gOUcZLmU06EBtSuVla+PihOSn7icktjo+qaxL225E4KFp40KlfsWtThZjsL//yXRz2nMxlkFjI7TJaGJs4kg==
+
 colorette@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-1.2.2.tgz#cbcc79d5e99caea2dbf10eb3a26fd8b3e6acfa94"

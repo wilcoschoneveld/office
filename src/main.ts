@@ -4,9 +4,12 @@ import { Engine } from "@babylonjs/core/Engines/engine";
 import { Scene } from '@babylonjs/core/scene';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
-import { SphereBuilder } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
+import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 
+import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import "@babylonjs/core/Materials/standardMaterial";
+import "@babylonjs/core/Loading/loadingScreen";
+import "@babylonjs/loaders/glTF";
 
 async function createScene(engine: Engine) {
   const scene = new Scene(engine);
@@ -28,15 +31,17 @@ async function createScene(engine: Engine) {
   // Default intensity is 1. Let's dim the light a small amount
   light.intensity = 0.8;
 
-  // Our built-in 'sphere' shape.
-  const sphere = SphereBuilder.CreateSphere(
-      "sphere",
-      { diameter: 2, segments: 32 },
-      scene
-  );
+  await SceneLoader.AppendAsync("./", "office.glb", scene);
 
-  // Move the sphere upward 1/2 its height
-  sphere.position.y = 1;
+  scene.getMeshByName("Cube.024")!.visibility = 0;
+
+  const xr = await WebXRDefaultExperience.CreateAsync(scene, {
+    floorMeshes: [scene.getMeshByName("Plane.014")!]
+  });
+
+  // const xr = await scene.createDefaultXRExperienceAsync({
+  //     floorMeshes: [scene.getMeshByName("ground")],
+  // });
 
   return scene;
 }
