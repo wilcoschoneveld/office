@@ -8,6 +8,8 @@ import {
     Vector3,
     WebXRDefaultExperience,
 } from "@babylonjs/core";
+import "@babylonjs/loaders";
+// import "@babylonjs/inspector";
 
 async function createScene(engine: Engine) {
     const scene = new Scene(engine);
@@ -36,6 +38,8 @@ async function createScene(engine: Engine) {
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [scene.getMeshByName("Plane.014")!],
     });
+
+    // scene.debugLayer.show();
 
     return scene;
 }
