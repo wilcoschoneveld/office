@@ -35,8 +35,17 @@ async function createScene(engine: Engine) {
 
     scene.getMeshByName("Cube.024")!.visibility = 0;
 
+    const floorMesh = scene.getMeshByName("Plane.014")!;
+
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
-        floorMeshes: [scene.getMeshByName("Plane.014")!],
+        floorMeshes: [floorMesh],
+    });
+
+    xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
+        // Move to the office
+        xrCamera.position.x = -2.22; // TODO: why negative?
+        xrCamera.position.y = floorMesh.position.y;
+        xrCamera.position.z = 7.87;
     });
 
     // scene.debugLayer.show();
