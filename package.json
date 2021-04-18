@@ -7,8 +7,9 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "@babylonjs/core": "5.0.0-alpha.17",
-    "@babylonjs/loaders": "5.0.0-alpha.17",
+    "@babylonjs/core": "^4.2.0",
+    "@babylonjs/loaders": "^4.2.0",
+    "prettier": "^2.2.1",
     "typescript": "^4.2.4",
     "vite": "^2.1.5"
   }
