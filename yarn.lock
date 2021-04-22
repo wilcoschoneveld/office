@@ -56,6 +56,10 @@
     babylonjs-gltf2interface "4.2.0"
     tslib ">=1.10.0"
 
+"ammo.js@github:kripken/ammo.js":
+  version "0.0.2"
+  resolved "https://codeload.github.com/kripken/ammo.js/tar.gz/99d0ec0b1e26d7ccc13e013caba8e8a5c98d953b"
+
 babylonjs-gltf2interface@4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-4.2.0.tgz#b0ef1e11e3574cf2c6f573d0c5c34857a2a7b322"

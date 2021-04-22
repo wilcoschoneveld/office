@@ -1,17 +1,18 @@
 {
-  "name": "office",
-  "version": "0.0.0",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview"
-  },
-  "devDependencies": {
-    "@babylonjs/core": "^4.2.0",
-    "@babylonjs/inspector": "^4.2.0",
-    "@babylonjs/loaders": "^4.2.0",
-    "prettier": "^2.2.1",
-    "typescript": "^4.2.4",
-    "vite": "^2.1.5"
-  }
+    "name": "office",
+    "version": "0.0.0",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "serve": "vite preview"
+    },
+    "devDependencies": {
+        "@babylonjs/core": "^4.2.0",
+        "@babylonjs/inspector": "^4.2.0",
+        "@babylonjs/loaders": "^4.2.0",
+        "prettier": "^2.2.1",
+        "typescript": "^4.2.4",
+        "vite": "^2.1.5",
+        "ammo.js": "github:kripken/ammo.js"
+    }
 }
