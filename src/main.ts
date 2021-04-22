@@ -37,7 +37,7 @@ async function createScene(engine: Engine) {
     // Default intensity is 1. Let's dim the light a small amount
     light.intensity = 0.8;
 
-    await SceneLoader.AppendAsync("./", "ground.glb");
+    await SceneLoader.AppendAsync("./", "scene.glb");
 
     // await SceneLoader.AppendAsync("./", "office.glb", scene);
 
@@ -58,25 +58,29 @@ async function createScene(engine: Engine) {
         xrCamera.position.z = 0;
     });
 
-    // const gravityVector = new Vector3(0, -9.81, 0);
-    // const ammoModule = await new Ammo();
-    // scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
+    const gravityVector = new Vector3(0, -9.81, 0);
+    const ammoModule = await new Ammo();
+    scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
-    // const floorCollider = Mesh.CreateBox("floorCollider", 1);
-    // floorCollider.scaling = new Vector3(5, 0.1, 5);
-    // floorCollider.position = new Vector3(-0.5, 0.5, 5.72);
+    const test = Mesh.CreateBox("test", 1);
+    test.physicsImpostor = new PhysicsImpostor(test, PhysicsImpostor.BoxImpostor, { mass: 1 });
+    test.position.y += 25;
+    test.position.x -= 3;
 
-    // const bucketCollider = Mesh.CreateBox("bucketCollider", 1);
-    // bucketCollider.scaling = new Vector3(0.4, 0.6, 0.4);
-    // bucketCollider.position = new Vector3(-2.4, 1.85, 4.13);
-    // // bucket.parent = bucketCollider;
-    // // bucket.scaling = new Vector3(1, 1, 1);
-    // // bucket.position = new Vector3(0, 0, 0);
+    const floorPhysicsRoot = new Mesh("floorPhysicsRoot");
 
-    // floorCollider.physicsImpostor = new PhysicsImpostor(floorCollider, PhysicsImpostor.BoxImpostor, { mass: 0 });
-    // bucketCollider.physicsImpostor = new PhysicsImpostor(bucketCollider, PhysicsImpostor.BoxImpostor, { mass: 1 });
+    // floorMesh.parent = floorPhysicsRoot;
+    floorPhysicsRoot.addChild(floorMesh);
+    floorMesh.scaling.y = -floorMesh.scaling.y;
+    console.log(floorMesh.scaling);
 
-    // scene.debugLayer.show();
+    floorMesh.physicsImpostor = new PhysicsImpostor(floorMesh, PhysicsImpostor.BoxImpostor, {
+        mass: 0,
+        ignoreParent: true,
+    });
+    floorPhysicsRoot.physicsImpostor = new PhysicsImpostor(floorPhysicsRoot, PhysicsImpostor.NoImpostor, { mass: 0 });
+
+    scene.debugLayer.show();
 
     return scene;
 }
