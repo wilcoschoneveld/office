@@ -37,13 +37,15 @@ async function createScene(engine: Engine) {
     // Default intensity is 1. Let's dim the light a small amount
     light.intensity = 0.8;
 
-    await SceneLoader.AppendAsync("./", "office.glb", scene);
+    await SceneLoader.AppendAsync("./", "ground.glb");
 
-    scene.getMeshByName("Cube.024")!.visibility = 0;
+    // await SceneLoader.AppendAsync("./", "office.glb", scene);
 
-    const floorMesh = scene.getMeshByName("Plane.014")!;
-    const bucket = scene.getMeshByName("Cylinder.001")!;
-    bucket.position.y += 1;
+    // scene.getMeshByName("Cube.024")!.visibility = 0;
+
+    const floorMesh = scene.getMeshByName("Cube")!;
+    // const bucket = scene.getMeshByName("Cylinder.001")!;
+    // bucket.position.y += 1;
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [floorMesh],
@@ -51,30 +53,30 @@ async function createScene(engine: Engine) {
 
     xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
         // Move to the office
-        xrCamera.position.x = -2.22; // TODO: why negative?
-        xrCamera.position.y = floorMesh.position.y;
-        xrCamera.position.z = 7.87;
+        xrCamera.position.x = 0;
+        xrCamera.position.y = 0;
+        xrCamera.position.z = 0;
     });
 
-    const gravityVector = new Vector3(0, -9.81, 0);
-    const ammoModule = await new Ammo();
-    scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
+    // const gravityVector = new Vector3(0, -9.81, 0);
+    // const ammoModule = await new Ammo();
+    // scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
-    const floorCollider = Mesh.CreateBox("floorCollider", 1);
-    floorCollider.scaling = new Vector3(5, 0.1, 5);
-    floorCollider.position = new Vector3(-0.5, 0.5, 5.72);
+    // const floorCollider = Mesh.CreateBox("floorCollider", 1);
+    // floorCollider.scaling = new Vector3(5, 0.1, 5);
+    // floorCollider.position = new Vector3(-0.5, 0.5, 5.72);
 
-    const bucketCollider = Mesh.CreateBox("bucketCollider", 1);
-    bucketCollider.scaling = new Vector3(0.4, 0.6, 0.4);
-    bucketCollider.position = new Vector3(-2.4, 1.85, 4.13);
-    // bucket.parent = bucketCollider;
-    // bucket.scaling = new Vector3(1, 1, 1);
-    // bucket.position = new Vector3(0, 0, 0);
+    // const bucketCollider = Mesh.CreateBox("bucketCollider", 1);
+    // bucketCollider.scaling = new Vector3(0.4, 0.6, 0.4);
+    // bucketCollider.position = new Vector3(-2.4, 1.85, 4.13);
+    // // bucket.parent = bucketCollider;
+    // // bucket.scaling = new Vector3(1, 1, 1);
+    // // bucket.position = new Vector3(0, 0, 0);
 
-    floorCollider.physicsImpostor = new PhysicsImpostor(floorCollider, PhysicsImpostor.BoxImpostor, { mass: 0 });
-    bucketCollider.physicsImpostor = new PhysicsImpostor(bucketCollider, PhysicsImpostor.BoxImpostor, { mass: 1 });
+    // floorCollider.physicsImpostor = new PhysicsImpostor(floorCollider, PhysicsImpostor.BoxImpostor, { mass: 0 });
+    // bucketCollider.physicsImpostor = new PhysicsImpostor(bucketCollider, PhysicsImpostor.BoxImpostor, { mass: 1 });
 
-    scene.debugLayer.show();
+    // scene.debugLayer.show();
 
     return scene;
 }
