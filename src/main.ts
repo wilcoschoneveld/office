@@ -1,5 +1,6 @@
 import "./style.css";
 import {
+    AmmoJSPlugin,
     ArcRotateCamera,
     CannonJSPlugin,
     Engine,
@@ -12,8 +13,8 @@ import {
     WebXRDefaultExperience,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-import * as Cannon from "cannon-es";
 import "@babylonjs/inspector";
+import { prepareMesh } from "./utils";
 
 async function createScene(engine: Engine) {
     const scene = new Scene(engine);
@@ -38,30 +39,27 @@ async function createScene(engine: Engine) {
     light.intensity = 0.8;
 
     const gravityVector = new Vector3(0, -9.81, 0);
-    // const ammoModule = await new Ammo();
+    const cannonModule = await import("cannon-es");
+    scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, cannonModule));
+    // const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
     // scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
-    scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, Cannon));
 
-    await SceneLoader.AppendAsync("./", "scene.glb");
+    await SceneLoader.AppendAsync("./", "office.glb");
 
-    // await SceneLoader.AppendAsync("./", "office.glb", scene);
+    const groundMesh = scene.getMeshByName("Ground") as Mesh;
+    prepareMesh(groundMesh);
+    groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
 
-    // scene.getMeshByName("Cube.024")!.visibility = 0;
+    const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
+    prepareMesh(bucketMesh);
+    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
 
-    const floorMesh = scene.getMeshByName("Cube")!;
-    floorMesh.setParent(null);
-    floorMesh.scaling.y = -floorMesh.scaling.y;
-    floorMesh.physicsImpostor = new PhysicsImpostor(floorMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
-
-    const ring = scene.getMeshByName("Ring")!;
-    ring.setParent(null);
-    ring.scaling.y = -ring.scaling.y;
-    ring.physicsImpostor = new PhysicsImpostor(ring, PhysicsImpostor.BoxImpostor, { mass: 1 });
-    // const bucket = scene.getMeshByName("Cylinder.001")!;
-    // bucket.position.y += 1;
+    const ballMesh = scene.getMeshByName("Ball") as Mesh;
+    prepareMesh(ballMesh);
+    ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 1 });
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
-        floorMeshes: [floorMesh],
+        floorMeshes: [groundMesh],
     });
 
     xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
@@ -70,24 +68,6 @@ async function createScene(engine: Engine) {
         xrCamera.position.y = 0;
         xrCamera.position.z = 0;
     });
-
-    const test = Mesh.CreateBox("test", 1);
-    test.physicsImpostor = new PhysicsImpostor(test, PhysicsImpostor.BoxImpostor, { mass: 1 });
-    test.position.y += 25;
-    test.position.x -= 3;
-
-    // const floorPhysicsRoot = new Mesh("floorPhysicsRoot");
-
-    // // floorMesh.parent = floorPhysicsRoot;
-    // floorPhysicsRoot.addChild(floorMesh);
-    // floorMesh.scaling.y = -floorMesh.scaling.y;
-    // console.log(floorMesh.scaling);
-
-    // floorMesh.physicsImpostor = new PhysicsImpostor(floorMesh, PhysicsImpostor.BoxImpostor, {
-    //     mass: 0,
-    //     ignoreParent: true,
-    // });
-    // floorPhysicsRoot.physicsImpostor = new PhysicsImpostor(floorPhysicsRoot, PhysicsImpostor.NoImpostor, { mass: 0 });
 
     scene.debugLayer.show();
 
