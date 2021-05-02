@@ -39,33 +39,24 @@ async function createScene(engine: Engine) {
     light.intensity = 0.8;
 
     const gravityVector = new Vector3(0, -9.81, 0);
-    const cannonModule = await import("cannon-es");
-    scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, cannonModule));
-    // const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
-    // scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
+    // const cannonModule = await import("cannon-es");
+    // scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, cannonModule));
+    const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
+    scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
-    await SceneLoader.AppendAsync("./", "office.glb");
+    await SceneLoader.AppendAsync("./", "test.babylon");
 
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
-    prepareMesh(groundMesh);
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
 
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
-    // prepareMesh(bucketMesh);
-    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
-
-    const bucketPhysics = new Mesh("bucketPhysics");
-    bucketPhysics.position.copyFrom(bucketMesh.position);
     for (const child of bucketMesh.getChildMeshes()) {
-        bucketPhysics.addChild(child);
-        child.scaling.y *= -1;
-        // child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
+        child.isVisible = false;
+        child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
     }
-    bucketPhysics.addChild(bucketMesh);
-    // bucketPhysics.physicsImpostor = new PhysicsImpostor(bucketPhysics, PhysicsImpostor.NoImpostor, { mass: 1 });
+    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.NoImpostor, { mass: 1 });
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    prepareMesh(ballMesh);
     ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 1 });
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
