@@ -13,8 +13,6 @@ import {
     WebXRDefaultExperience,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-import "@babylonjs/inspector";
-import { prepareMesh } from "./utils";
 
 async function createScene(engine: Engine) {
     const scene = new Scene(engine);
@@ -57,7 +55,7 @@ async function createScene(engine: Engine) {
     bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.NoImpostor, { mass: 1 });
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 1 });
+    ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 0.1 });
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
@@ -70,7 +68,10 @@ async function createScene(engine: Engine) {
         xrCamera.position.z = 0;
     });
 
-    scene.debugLayer.show();
+    if (process.env.NODE_ENV === "development") {
+        await import("@babylonjs/inspector");
+        scene.debugLayer.show();
+    }
 
     return scene;
 }

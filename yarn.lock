@@ -56,6 +56,11 @@
     babylonjs-gltf2interface "5.0.0-alpha.18"
     tslib "^2.1.0"
 
+"@types/node@^15.0.1":
+  version "15.0.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-15.0.1.tgz#ef34dea0881028d11398be5bf4e856743e3dc35a"
+  integrity sha512-TMkXt0Ck1y0KKsGr9gJtWGjttxlZnnvDtphxUOSd0bfaR6Q1jle+sPvrzNR1urqYTWMinoKvjKfXUGsumaO1PA==
+
 "ammo.js@github:kripken/ammo.js":
   version "0.0.2"
   resolved "https://codeload.github.com/kripken/ammo.js/tar.gz/99d0ec0b1e26d7ccc13e013caba8e8a5c98d953b"
