@@ -51,8 +51,18 @@ async function createScene(engine: Engine) {
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
 
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
-    prepareMesh(bucketMesh);
+    // prepareMesh(bucketMesh);
     bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
+
+    const bucketPhysics = new Mesh("bucketPhysics");
+    bucketPhysics.position.copyFrom(bucketMesh.position);
+    for (const child of bucketMesh.getChildMeshes()) {
+        bucketPhysics.addChild(child);
+        child.scaling.y *= -1;
+        // child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
+    }
+    bucketPhysics.addChild(bucketMesh);
+    // bucketPhysics.physicsImpostor = new PhysicsImpostor(bucketPhysics, PhysicsImpostor.NoImpostor, { mass: 1 });
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
     prepareMesh(ballMesh);
