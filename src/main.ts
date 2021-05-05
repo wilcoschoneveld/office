@@ -10,7 +10,10 @@ import {
     Scene,
     SceneLoader,
     Vector3,
+    WebXRControllerPhysics,
     WebXRDefaultExperience,
+    WebXRFeatureName,
+    WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
 
@@ -45,21 +48,38 @@ async function createScene(engine: Engine) {
     await SceneLoader.AppendAsync("./", "test.babylon");
 
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
-    groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, { mass: 0 });
+    groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, {
+        mass: 0,
+        friction: 0.5,
+    });
 
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
     for (const child of bucketMesh.getChildMeshes()) {
-        child.isVisible = false;
         child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
+        child.isVisible = false;
     }
-    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.NoImpostor, { mass: 1 });
+    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.NoImpostor, {
+        mass: 1,
+        friction: 0.3,
+    });
+    // bucketMesh.position.y += 2;
+    // bucketMesh.physicsImpostor.setLinearVelocity(new Vector3(1, 0, 0));
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 0.1 });
+    // ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 0.1 });
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
     });
+
+    const xrPhysics = xr.baseExperience.featuresManager.enableFeature(WebXRFeatureName.PHYSICS_CONTROLLERS, "latest", {
+        xrInput: xr.input,
+        physicsProperties: {
+            restitution: 0.5,
+            impostorSize: 0.1,
+            impostorType: PhysicsImpostor.SphereImpostor,
+        },
+    }) as WebXRControllerPhysics;
 
     xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
         // Move to the office
@@ -68,10 +88,49 @@ async function createScene(engine: Engine) {
         xrCamera.position.z = 0;
     });
 
-    if (process.env.NODE_ENV === "development") {
-        await import("@babylonjs/inspector");
-        scene.debugLayer.show();
-    }
+    const newBalls = new Map<WebXRInputSource, Mesh>();
+
+    xr.input.onControllerAddedObservable.add((controller) => {
+        controller.onMotionControllerInitObservable.add((motionController) => {
+            console.log(motionController.getComponentIds());
+            const squeezeComponent = motionController.getComponentOfType("squeeze");
+            if (squeezeComponent) {
+                squeezeComponent.onButtonStateChangedObservable.add(() => {
+                    if (squeezeComponent.changes.pressed) {
+                        if (squeezeComponent.pressed) {
+                            const newBall = ballMesh.clone();
+                            newBall.setParent(controller.grip!);
+                            newBall.position = new Vector3(0, 0, 0.1);
+                            newBalls.set(controller, newBall);
+                        } else {
+                            const ball = newBalls.get(controller);
+
+                            if (ball) {
+                                ball.setParent(null);
+
+                                ball.physicsImpostor = new PhysicsImpostor(
+                                    //
+                                    ball,
+                                    PhysicsImpostor.SphereImpostor,
+                                    {
+                                        mass: 0.1,
+                                    }
+                                );
+
+                                const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
+                                ball.physicsImpostor.setLinearVelocity(vel);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // if (process.env.NODE_ENV === "development") {
+    //     await import("@babylonjs/inspector");
+    //     scene.debugLayer.show();
+    // }
 
     return scene;
 }
