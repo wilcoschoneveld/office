@@ -9,6 +9,7 @@ import {
     PhysicsImpostor,
     Scene,
     SceneLoader,
+    TransformNode,
     Vector3,
     WebXRControllerPhysics,
     WebXRDefaultExperience,
@@ -16,9 +17,11 @@ import {
     WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
+import { createCompoundPhysics } from "./utils";
 
 async function createScene(engine: Engine) {
     const scene = new Scene(engine);
+    scene.useRightHandedSystem = true;
     // Add a camera to the scene and attach it to the canvas
     const camera = new ArcRotateCamera(
         //
@@ -45,28 +48,22 @@ async function createScene(engine: Engine) {
     const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
     scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
-    await SceneLoader.AppendAsync("./", "test.babylon");
+    await SceneLoader.AppendAsync("./", "office.glb");
+    const plantNode = scene.getNodeByName("Plant") as TransformNode;
+    const plantRoot = createCompoundPhysics(plantNode);
 
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
+    groundMesh.setParent(null);
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, {
         mass: 0,
         friction: 0.5,
     });
 
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
-    for (const child of bucketMesh.getChildMeshes()) {
-        child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
-        child.isVisible = false;
-    }
-    bucketMesh.physicsImpostor = new PhysicsImpostor(bucketMesh, PhysicsImpostor.NoImpostor, {
-        mass: 1,
-        friction: 0.3,
-    });
-    // bucketMesh.position.y += 2;
-    // bucketMesh.physicsImpostor.setLinearVelocity(new Vector3(1, 0, 0));
+    const bucketRoot = createCompoundPhysics(bucketMesh);
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    // ballMesh.physicsImpostor = new PhysicsImpostor(ballMesh, PhysicsImpostor.SphereImpostor, { mass: 0.1 });
+    ballMesh.isVisible = false;
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
@@ -99,8 +96,9 @@ async function createScene(engine: Engine) {
                     if (squeezeComponent.changes.pressed) {
                         if (squeezeComponent.pressed) {
                             const newBall = ballMesh.clone();
+                            newBall.isVisible = true;
                             newBall.setParent(controller.grip!);
-                            newBall.position = new Vector3(0, 0, 0.1);
+                            newBall.position = new Vector3(0, 0, -0.1);
                             newBalls.set(controller, newBall);
                         } else {
                             const ball = newBalls.get(controller);
@@ -127,10 +125,10 @@ async function createScene(engine: Engine) {
         });
     });
 
-    // if (process.env.NODE_ENV === "development") {
-    //     await import("@babylonjs/inspector");
-    //     scene.debugLayer.show();
-    // }
+    if (process.env.NODE_ENV === "development" && !navigator.userAgent.includes("Quest")) {
+        await import("@babylonjs/inspector");
+        scene.debugLayer.show();
+    }
 
     return scene;
 }
