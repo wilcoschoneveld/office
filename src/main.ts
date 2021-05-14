@@ -3,12 +3,17 @@ import {
     AmmoJSPlugin,
     ArcRotateCamera,
     CannonJSPlugin,
+    Color3,
+    DirectionalLight,
     Engine,
     HemisphericLight,
+    Light,
     Mesh,
     PhysicsImpostor,
     Scene,
     SceneLoader,
+    ShadowGenerator,
+    Tags,
     TransformNode,
     Vector3,
     WebXRControllerPhysics,
@@ -18,6 +23,34 @@ import {
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
 import { createCompoundPhysics } from "./utils";
+
+function enableShadows(scene: Scene) {
+    const sunLight = scene.getLightByName("Sun") as DirectionalLight;
+
+    const shadowGenerator = new ShadowGenerator(1024, sunLight);
+    shadowGenerator.bias = 0.000002;
+
+    shadowGenerator.addShadowCaster(scene.getMeshByName("Bucket")!, false);
+    shadowGenerator.addShadowCaster(scene.getMeshByName("Wall")!);
+    shadowGenerator.addShadowCaster(scene.getMeshByName("Ball")!);
+
+    for (const node of scene.getNodes()) {
+        if (node instanceof Mesh) {
+            if (node.name.startsWith("Wall")) {
+                node.receiveShadows = true;
+            }
+
+            if (["plant", "pot", "pot2"].some((n) => node.name === n)) {
+                shadowGenerator.addShadowCaster(node);
+            }
+        }
+    }
+
+    scene.getMeshByName("Wall");
+    scene.getMeshByName("Ground")!.receiveShadows = true;
+
+    return shadowGenerator;
+}
 
 async function createScene(engine: Engine) {
     const scene = new Scene(engine);
@@ -36,19 +69,30 @@ async function createScene(engine: Engine) {
     camera.alpha = 0.5 * Math.PI;
     camera.beta = 1.381;
 
-    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-
-    // Default intensity is 1. Let's dim the light a small amount
-    light.intensity = 0.8;
+    const light = new HemisphericLight("light", new Vector3(1, 1, 0), scene);
+    light.intensity = 0.6;
+    light.groundColor = new Color3(1, 1, 1);
 
     const gravityVector = new Vector3(0, -9.81, 0);
+    // const gravityVector = new Vector3(-9.81, 0, 0);
     // const cannonModule = await import("cannon-es");
     // scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, cannonModule));
     const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
     scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
     await SceneLoader.AppendAsync("./", "office.glb");
+    for (const node of scene.getNodes()) {
+        if (node instanceof Light) {
+            // node.intensity = Math.sqrt(node.intensity);
+        }
+
+        if (node instanceof Mesh && node.name.startsWith("Window")) {
+            node.isVisible = false;
+        }
+    }
+
+    const shadowGenerator = enableShadows(scene);
+
     const plantNode = scene.getNodeByName("Plant") as TransformNode;
     const plantRoot = createCompoundPhysics(plantNode);
 
@@ -59,11 +103,35 @@ async function createScene(engine: Engine) {
         friction: 0.5,
     });
 
+    const wallMesh = scene.getMeshByName("Wall") as Mesh;
+    wallMesh.setParent(null);
+    wallMesh.physicsImpostor = new PhysicsImpostor(wallMesh, PhysicsImpostor.BoxImpostor, {
+        mass: 0,
+        friction: 0.5,
+    });
+
+    const wallMesh2 = scene.getMeshByName("Wall.001") as Mesh;
+    wallMesh2.setParent(null);
+    wallMesh2.physicsImpostor = new PhysicsImpostor(wallMesh2, PhysicsImpostor.BoxImpostor, {
+        mass: 0,
+        friction: 0.5,
+    });
+
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
     const bucketRoot = createCompoundPhysics(bucketMesh);
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
     ballMesh.isVisible = false;
+
+    // ballMesh.setParent(null);
+    // ballMesh.physicsImpostor = new PhysicsImpostor(
+    //     //
+    //     ballMesh,
+    //     PhysicsImpostor.SphereImpostor,
+    //     {
+    //         mass: 0.1,
+    //     }
+    // );
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
@@ -86,6 +154,7 @@ async function createScene(engine: Engine) {
     });
 
     const newBalls = new Map<WebXRInputSource, Mesh>();
+    let liveBalls: Array<Mesh> = [];
 
     xr.input.onControllerAddedObservable.add((controller) => {
         controller.onMotionControllerInitObservable.add((motionController) => {
@@ -100,6 +169,8 @@ async function createScene(engine: Engine) {
                             newBall.setParent(controller.grip!);
                             newBall.position = new Vector3(0, 0, -0.1);
                             newBalls.set(controller, newBall);
+
+                            shadowGenerator.addShadowCaster(newBall);
                         } else {
                             const ball = newBalls.get(controller);
 
@@ -117,11 +188,24 @@ async function createScene(engine: Engine) {
 
                                 const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
                                 ball.physicsImpostor.setLinearVelocity(vel);
+                                liveBalls.push(ball);
                             }
                         }
                     }
                 });
             }
+        });
+    });
+
+    scene.onAfterRenderObservable.add(() => {
+        liveBalls = liveBalls.filter((ball) => {
+            if (ball.position.y < -0.5) {
+                // out of bounds
+                shadowGenerator.removeShadowCaster(ball);
+                ball.dispose();
+                return false;
+            }
+            return true;
         });
     });
 
