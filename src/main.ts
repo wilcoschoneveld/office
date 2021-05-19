@@ -13,7 +13,6 @@ import {
     Scene,
     SceneLoader,
     ShadowGenerator,
-    Tags,
     TransformNode,
     Vector3,
     WebXRControllerPhysics,
@@ -137,65 +136,71 @@ async function createScene(engine: Engine) {
         floorMeshes: [groundMesh],
     });
 
-    const xrPhysics = xr.baseExperience.featuresManager.enableFeature(WebXRFeatureName.PHYSICS_CONTROLLERS, "latest", {
-        xrInput: xr.input,
-        physicsProperties: {
-            restitution: 0.5,
-            impostorSize: 0.1,
-            impostorType: PhysicsImpostor.SphereImpostor,
-        },
-    }) as WebXRControllerPhysics;
-
-    xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
-        // Move to the office
-        xrCamera.position.x = 0;
-        xrCamera.position.y = 0;
-        xrCamera.position.z = 0;
-    });
-
-    const newBalls = new Map<WebXRInputSource, Mesh>();
     let liveBalls: Array<Mesh> = [];
 
-    xr.input.onControllerAddedObservable.add((controller) => {
-        controller.onMotionControllerInitObservable.add((motionController) => {
-            console.log(motionController.getComponentIds());
-            const squeezeComponent = motionController.getComponentOfType("squeeze");
-            if (squeezeComponent) {
-                squeezeComponent.onButtonStateChangedObservable.add(() => {
-                    if (squeezeComponent.changes.pressed) {
-                        if (squeezeComponent.pressed) {
-                            const newBall = ballMesh.clone();
-                            newBall.isVisible = true;
-                            newBall.setParent(controller.grip!);
-                            newBall.position = new Vector3(0, 0, -0.1);
-                            newBalls.set(controller, newBall);
+    if (xr.baseExperience) {
+        const xrPhysics = xr.baseExperience.featuresManager.enableFeature(
+            WebXRFeatureName.PHYSICS_CONTROLLERS,
+            "latest",
+            {
+                xrInput: xr.input,
+                physicsProperties: {
+                    restitution: 0.5,
+                    impostorSize: 0.1,
+                    impostorType: PhysicsImpostor.SphereImpostor,
+                },
+            }
+        ) as WebXRControllerPhysics;
 
-                            shadowGenerator.addShadowCaster(newBall);
-                        } else {
-                            const ball = newBalls.get(controller);
+        xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
+            // Move to the office
+            xrCamera.position.x = 0;
+            xrCamera.position.y = 0;
+            xrCamera.position.z = 0;
+        });
 
-                            if (ball) {
-                                ball.setParent(null);
+        const newBalls = new Map<WebXRInputSource, Mesh>();
 
-                                ball.physicsImpostor = new PhysicsImpostor(
-                                    //
-                                    ball,
-                                    PhysicsImpostor.SphereImpostor,
-                                    {
-                                        mass: 0.1,
-                                    }
-                                );
+        xr.input.onControllerAddedObservable.add((controller) => {
+            controller.onMotionControllerInitObservable.add((motionController) => {
+                const squeezeComponent = motionController.getComponentOfType("squeeze");
+                if (squeezeComponent) {
+                    squeezeComponent.onButtonStateChangedObservable.add(() => {
+                        if (squeezeComponent.changes.pressed) {
+                            if (squeezeComponent.pressed) {
+                                const newBall = ballMesh.clone();
+                                newBall.isVisible = true;
+                                newBall.setParent(controller.grip!);
+                                newBall.position = new Vector3(0, 0, -0.1);
+                                newBalls.set(controller, newBall);
 
-                                const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
-                                ball.physicsImpostor.setLinearVelocity(vel);
-                                liveBalls.push(ball);
+                                shadowGenerator.addShadowCaster(newBall);
+                            } else {
+                                const ball = newBalls.get(controller);
+
+                                if (ball) {
+                                    ball.setParent(null);
+
+                                    ball.physicsImpostor = new PhysicsImpostor(
+                                        //
+                                        ball,
+                                        PhysicsImpostor.SphereImpostor,
+                                        {
+                                            mass: 0.1,
+                                        }
+                                    );
+
+                                    const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
+                                    ball.physicsImpostor.setLinearVelocity(vel);
+                                    liveBalls.push(ball);
+                                }
                             }
                         }
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
-    });
+    }
 
     scene.onAfterRenderObservable.add(() => {
         liveBalls = liveBalls.filter((ball) => {
