@@ -1,6 +1,12 @@
 import { Color4, Mesh, ParticleSystem, Scene, Sound, Texture, Tools, Vector3 } from "@babylonjs/core";
+import { IMachine } from "./state";
 
-export function createConfetti(scene: Scene) {
+let system1: ParticleSystem;
+let system2: ParticleSystem;
+let system3: ParticleSystem;
+let partyHornSound: Sound;
+
+export function prepareConfetti(scene: Scene, machine: IMachine) {
     function confettiParticles(name: string, color: Color4) {
         const particleSystem = new ParticleSystem(name, 500, scene);
 
@@ -43,13 +49,12 @@ export function createConfetti(scene: Scene) {
         particleSystem.direction1 = new Vector3(-0.5, 1, -0.5);
         particleSystem.direction2 = new Vector3(0.5, 1, 0.5);
 
-        particleSystem.targetStopDuration = 5;
-
-        particleSystem.start();
+        particleSystem.targetStopDuration = 1;
+        return particleSystem;
     }
 
     const particleTexture = new Texture("empty.png", scene);
-    const partyHornSound = new Sound("partyHorn", "party_horn.wav", scene);
+    partyHornSound = new Sound("partyHorn", "party_horn.wav", scene);
 
     const source = new Mesh("confetti_source");
     source.parent = scene.getMeshByName("Bucket");
@@ -57,7 +62,20 @@ export function createConfetti(scene: Scene) {
 
     partyHornSound.attachToMesh(source);
 
-    confettiParticles("yellow", Color4.FromHexString("#CECB3EFF"));
-    confettiParticles("red", Color4.FromHexString("#C83E3EFF"));
-    confettiParticles("green", Color4.FromHexString("#32A232FF"));
+    machine.subscribe((state) => {
+        if (state.currentState === "win") {
+            createConfetti(scene);
+        }
+    });
+
+    system1 = confettiParticles("yellow", Color4.FromHexString("#CECB3EFF"));
+    system2 = confettiParticles("red", Color4.FromHexString("#C83E3EFF"));
+    system3 = confettiParticles("green", Color4.FromHexString("#32A232FF"));
+}
+
+export function createConfetti(scene: Scene) {
+    system1.start();
+    system2.start();
+    system3.start();
+    partyHornSound.play();
 }

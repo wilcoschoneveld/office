@@ -1,9 +1,11 @@
 import {
+    ActionManager,
     AmmoJSPlugin,
     ArcRotateCamera,
     Color3,
     DirectionalLight,
     Engine,
+    ExecuteCodeAction,
     HemisphericLight,
     Light,
     Mesh,
@@ -19,7 +21,7 @@ import {
     WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-import { createConfetti } from "./confetti";
+import { createConfetti, prepareConfetti } from "./confetti";
 import { createDebugGui } from "./gui";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
@@ -119,11 +121,14 @@ async function createScene(engine: Engine, machine: IMachine) {
     const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
     const bucketRoot = createCompoundPhysics(bucketMesh);
 
+    const triggerMesh = scene.getMeshByName("trigger") as Mesh;
+    triggerMesh.isVisible = false;
+
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
     ballMesh.isVisible = false;
 
-    // const ball = ballMesh.clone();
-    // ball.position = new Vector3(0, 5, 0);
+    const ball = ballMesh.clone();
+    // // ball.position = new Vector3(0, 5, 0);
     // ball.isVisible = true;
     // ball.setParent(null);
 
@@ -135,8 +140,21 @@ async function createScene(engine: Engine, machine: IMachine) {
     //         mass: 0.1,
     //     }
     // );
-    // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
-    // ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
+    // // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
+    // // ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
+
+    // const action = new ExecuteCodeAction(
+    //     {
+    //         trigger: ActionManager.OnIntersectionEnterTrigger,
+    //         parameter: triggerMesh,
+    //     },
+    //     () => {
+    //         machine.send({ name: "BallInBucket" });
+    //     }
+    // );
+
+    // ball.actionManager = new ActionManager(scene);
+    // ball.actionManager.registerAction(action);
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
@@ -204,6 +222,26 @@ async function createScene(engine: Engine, machine: IMachine) {
 
                                     const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
                                     ball.physicsImpostor.setLinearVelocity(vel);
+
+                                    const actionManager = new ActionManager(scene);
+
+                                    const action = new ExecuteCodeAction(
+                                        {
+                                            trigger: ActionManager.OnIntersectionEnterTrigger,
+                                            parameter: {
+                                                mesh: triggerMesh,
+                                                usePreciseIntersection: true,
+                                            },
+                                        },
+                                        () => {
+                                            machine.send({ name: "BallInBucket" });
+                                            actionManager.unregisterAction(action);
+                                        }
+                                    );
+
+                                    actionManager.registerAction(action);
+                                    ball.actionManager = actionManager;
+
                                     liveBalls.push(ball);
                                 }
                             }
@@ -240,8 +278,6 @@ async function bootstrap() {
     const machine = createMachine();
     const scene = await createScene(engine, machine); //Call the createScene function
 
-    createConfetti(scene);
-
     if (process.env.NODE_ENV === "development") {
         createDebugGui(scene, machine);
 
@@ -255,6 +291,8 @@ async function bootstrap() {
     engine.runRenderLoop(function () {
         scene.render();
     });
+
+    prepareConfetti(scene, machine);
 
     // Watch for browser/canvas resize events
     window.addEventListener("resize", function () {

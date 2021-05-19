@@ -14,7 +14,15 @@ type ChangeXRState = {
     xr: WebXRDefaultExperience;
 };
 
-type TEvent = ChangeXRState;
+type BallInBucket = {
+    name: "BallInBucket";
+};
+
+type InvokeReset = {
+    name: "InvokeReset";
+};
+
+type TEvent = ChangeXRState | BallInBucket | InvokeReset;
 type TSubscriber = (state: IState) => void;
 
 export interface IMachine {
@@ -30,11 +38,35 @@ const transition = (state: IState, event: TEvent): IState => {
         };
     }
 
+    if (state.currentState === "sandbox") {
+        if (event.name === "BallInBucket") {
+            return {
+                ...state,
+                currentState: "win",
+            };
+        }
+    }
+
+    if (state.currentState === "win") {
+        if (event.name === "InvokeReset") {
+            return {
+                ...state,
+                currentState: "sandbox",
+            };
+        }
+    }
+
     console.log("unprocessed event", state, event);
     return state;
 };
 
-const invoke = async (state: IState, event: TEvent, send: (event: TEvent) => void) => {};
+const invoke = async (state: IState, event: TEvent, send: (event: TEvent) => void) => {
+    if (state.currentState === "win") {
+        setTimeout(() => {
+            send({ name: "InvokeReset" });
+        }, 3000);
+    }
+};
 
 export const createMachine = (): IMachine => {
     let state = initialState;
