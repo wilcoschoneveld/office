@@ -19,6 +19,7 @@ import {
     WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
+import { createConfetti } from "./confetti";
 import { createDebugGui } from "./gui";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
@@ -238,6 +239,8 @@ async function bootstrap() {
     // Add your code here matching the playground format
     const machine = createMachine();
     const scene = await createScene(engine, machine); //Call the createScene function
+
+    createConfetti(scene);
 
     if (process.env.NODE_ENV === "development") {
         createDebugGui(scene, machine);
