@@ -1,8 +1,6 @@
-import "./style.css";
 import {
     AmmoJSPlugin,
     ArcRotateCamera,
-    CannonJSPlugin,
     Color3,
     DirectionalLight,
     Engine,
@@ -21,6 +19,9 @@ import {
     WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
+import { createDebugGui } from "./gui";
+import { createMachine, IMachine } from "./state";
+import "./style.css";
 import { createCompoundPhysics } from "./utils";
 
 function enableShadows(scene: Scene) {
@@ -51,13 +52,13 @@ function enableShadows(scene: Scene) {
     return shadowGenerator;
 }
 
-async function createScene(engine: Engine) {
+async function createScene(engine: Engine, machine: IMachine) {
     const scene = new Scene(engine);
     scene.useRightHandedSystem = true;
     // Add a camera to the scene and attach it to the canvas
     const camera = new ArcRotateCamera(
         //
-        "camera",
+        "main",
         0,
         Math.PI / 3,
         20,
@@ -73,9 +74,6 @@ async function createScene(engine: Engine) {
     light.groundColor = new Color3(1, 1, 1);
 
     const gravityVector = new Vector3(0, -9.81, 0);
-    // const gravityVector = new Vector3(-9.81, 0, 0);
-    // const cannonModule = await import("cannon-es");
-    // scene.enablePhysics(gravityVector, new CannonJSPlugin(true, undefined, cannonModule));
     const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
     scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
@@ -101,6 +99,7 @@ async function createScene(engine: Engine) {
         mass: 0,
         friction: 0.5,
     });
+    groundMesh.physicsImpostor.physicsBody.setRollingFriction(0.5);
 
     const wallMesh = scene.getMeshByName("Wall") as Mesh;
     wallMesh.setParent(null);
@@ -122,15 +121,21 @@ async function createScene(engine: Engine) {
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
     ballMesh.isVisible = false;
 
-    // ballMesh.setParent(null);
-    // ballMesh.physicsImpostor = new PhysicsImpostor(
+    // const ball = ballMesh.clone();
+    // ball.position = new Vector3(0, 5, 0);
+    // ball.isVisible = true;
+    // ball.setParent(null);
+
+    // ball.physicsImpostor = new PhysicsImpostor(
     //     //
-    //     ballMesh,
+    //     ball,
     //     PhysicsImpostor.SphereImpostor,
     //     {
     //         mass: 0.1,
     //     }
     // );
+    // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
+    // ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],
@@ -139,6 +144,10 @@ async function createScene(engine: Engine) {
     let liveBalls: Array<Mesh> = [];
 
     if (xr.baseExperience) {
+        xr.baseExperience.onStateChangedObservable.add(() => {
+            machine.send({ name: "ChangeXRState", xr });
+        });
+
         const xrPhysics = xr.baseExperience.featuresManager.enableFeature(
             WebXRFeatureName.PHYSICS_CONTROLLERS,
             "latest",
@@ -190,6 +199,8 @@ async function createScene(engine: Engine) {
                                         }
                                     );
 
+                                    ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
+
                                     const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
                                     ball.physicsImpostor.setLinearVelocity(vel);
                                     liveBalls.push(ball);
@@ -214,11 +225,6 @@ async function createScene(engine: Engine) {
         });
     });
 
-    if (process.env.NODE_ENV === "development" && !navigator.userAgent.includes("Quest")) {
-        await import("@babylonjs/inspector");
-        scene.debugLayer.show();
-    }
-
     return scene;
 }
 
@@ -230,7 +236,17 @@ async function bootstrap() {
     const engine = new Engine(canvas, true);
 
     // Add your code here matching the playground format
-    const scene = await createScene(engine); //Call the createScene function
+    const machine = createMachine();
+    const scene = await createScene(engine, machine); //Call the createScene function
+
+    if (process.env.NODE_ENV === "development") {
+        createDebugGui(scene, machine);
+
+        if (!navigator.userAgent.includes("Quest")) {
+            await import("@babylonjs/inspector");
+            scene.debugLayer.show();
+        }
+    }
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {

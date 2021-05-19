@@ -7,14 +7,15 @@
         "serve": "vite preview"
     },
     "devDependencies": {
-        "@babylonjs/core": "5.0.0-alpha.21",
-        "@babylonjs/inspector": "5.0.0-alpha.21",
-        "@babylonjs/loaders": "5.0.0-alpha.21",
-        "@types/node": "^15.0.1",
+        "@babylonjs/core": "5.0.0-alpha.22",
+        "@babylonjs/gui": "5.0.0-alpha.22",
+        "@babylonjs/inspector": "5.0.0-alpha.22",
+        "@babylonjs/loaders": "5.0.0-alpha.22",
+        "@types/node": "^15.3.0",
         "ammo.js": "github:kripken/ammo.js",
-        "cannon-es": "^0.17.0",
-        "prettier": "^2.2.1",
+        "cannon-es": "^0.17.1",
+        "prettier": "^2.3.0",
         "typescript": "^4.2.4",
-        "vite": "^2.1.5"
+        "vite": "^2.3.3"
     }
 }
