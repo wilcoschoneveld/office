@@ -135,19 +135,37 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     ballMesh.material = materialAmiga;
 
-    const ball = ballMesh.clone();
-    // // ball.position = new Vector3(0, 5, 0);
-    // ball.isVisible = true;
+    // const ball = ballMesh.clone();
     // ball.setParent(null);
+    // ball.position = new Vector3(0, 0.2, 0);
 
     // ball.physicsImpostor = new PhysicsImpostor(
     //     //
     //     ball,
     //     PhysicsImpostor.SphereImpostor,
     //     {
+    //         mass: 0.1
+    //     } as any
+    // );
+
+    // const ball2 = ballMesh.clone();
+    // ball2.position = new Vector3(0.01, 0.5, 0);
+    // ball2.setParent(null);
+
+    // ball2.physicsImpostor = new PhysicsImpostor(
+    //     //
+    //     ball2,
+    //     PhysicsImpostor.SphereImpostor,
+    //     {
     //         mass: 0.1,
     //     }
     // );
+
+    // const test = ball2.physicsImpostor.physicsBody.getBroadphaseProxy();
+    // test.m_collisionFilterMask = 0;
+    // console.log(test.m_collisionFilterGroup);
+    // console.log(test.m_collisionFilterMask);
+
     // // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
     // // ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
 
@@ -184,6 +202,8 @@ async function createScene(engine: Engine, machine: IMachine) {
                     restitution: 0.5,
                     impostorSize: 0.1,
                     impostorType: PhysicsImpostor.SphereImpostor,
+                    group: 4, // group 4 (custom)
+                    mask: -1 ^ 2, // all but static group (bit 2)
                 },
             }
         ) as WebXRControllerPhysics;
@@ -223,7 +243,9 @@ async function createScene(engine: Engine, machine: IMachine) {
                                         PhysicsImpostor.SphereImpostor,
                                         {
                                             mass: 0.1,
-                                        }
+                                            group: 1, // dynamic group
+                                            mask: -1 ^ 4, // all but group 4 (controllers)
+                                        } as any
                                     );
 
                                     ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
@@ -268,6 +290,14 @@ async function createScene(engine: Engine, machine: IMachine) {
                                     ball.actionManager = actionManager;
 
                                     liveBalls.push(ball);
+
+                                    setInterval(() => {
+                                        if (ball.physicsImpostor) {
+                                            // ball should collide with all
+                                            ball.physicsImpostor.physicsBody.getBroadphaseProxy().m_collisionFilterMask =
+                                                -1;
+                                        }
+                                    }, 500);
                                 }
                             }
                         }
@@ -278,8 +308,9 @@ async function createScene(engine: Engine, machine: IMachine) {
     }
 
     scene.onAfterRenderObservable.add(() => {
-        liveBalls = liveBalls.filter((ball) => {
-            if (ball.position.y < -0.5) {
+        liveBalls = liveBalls.filter((ball, i) => {
+            const maxBalls = 25;
+            if (ball.position.y < -0.5 || liveBalls.length - maxBalls > i) {
                 // out of bounds
                 shadowGenerator.removeShadowCaster(ball);
                 ball.dispose();
