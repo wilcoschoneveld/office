@@ -13,6 +13,8 @@ import {
     Scene,
     SceneLoader,
     ShadowGenerator,
+    StandardMaterial,
+    Texture,
     TransformNode,
     Vector3,
     WebXRControllerPhysics,
@@ -125,7 +127,13 @@ async function createScene(engine: Engine, machine: IMachine) {
     triggerMesh.isVisible = false;
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    ballMesh.isVisible = false;
+    // ballMesh.isVisible = false;
+
+    const materialAmiga = new StandardMaterial("amiga", scene);
+    materialAmiga.diffuseTexture = new Texture("/amiga.jpeg", scene);
+    materialAmiga.emissiveColor = new Color3(0.5, 0.5, 0.5);
+
+    ballMesh.material = materialAmiga;
 
     const ball = ballMesh.clone();
     // // ball.position = new Vector3(0, 5, 0);
@@ -220,8 +228,25 @@ async function createScene(engine: Engine, machine: IMachine) {
 
                                     ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
 
-                                    const vel = xrPhysics.getImpostorForController(controller)!.getLinearVelocity();
-                                    ball.physicsImpostor.setLinearVelocity(vel);
+                                    const controllerImposter = xrPhysics.getImpostorForController(controller)!;
+
+                                    const w = controllerImposter.getAngularVelocity()!;
+                                    const v = controllerImposter.getLinearVelocity()!;
+
+                                    // const r = new Vector3(0, 0, -0.1);
+                                    // r.rotateByQuaternionToRef(controller.grip?.rotationQuaternion!, r);
+
+                                    const r = ball.position.subtract(controllerImposter.getObjectCenter());
+
+                                    // console.log("angular velocity", w);
+                                    // console.log("linear velocity", v);
+                                    // console.log("ball pos", ball.position);
+                                    // console.log("rotation q", controller.grip?.rotationQuaternion!);
+
+                                    // console.log("radius vector", r);
+
+                                    ball.physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
+                                    ball.physicsImpostor.setAngularVelocity(w);
 
                                     const actionManager = new ActionManager(scene);
 
