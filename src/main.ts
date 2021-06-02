@@ -103,6 +103,7 @@ async function createScene(engine: Engine, machine: IMachine) {
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, {
         mass: 0,
         friction: 1,
+        restitution: 0.6,
     });
 
     const wallMesh = scene.getMeshByName("Wall") as Mesh;
@@ -145,6 +146,7 @@ async function createScene(engine: Engine, machine: IMachine) {
         {
             mass: 0.1,
             friction: 1,
+            restitution: 0.9,
         } as any
     );
     ball.physicsImpostor = impostor;
@@ -246,6 +248,8 @@ async function createScene(engine: Engine, machine: IMachine) {
                                         PhysicsImpostor.SphereImpostor,
                                         {
                                             mass: 0.1,
+                                            friction: 1,
+                                            restitution: 0.9,
                                             group: 1, // dynamic group
                                             mask: -1 ^ 4, // all but group 4 (controllers)
                                         } as any
