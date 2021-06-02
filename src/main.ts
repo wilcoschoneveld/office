@@ -102,9 +102,8 @@ async function createScene(engine: Engine, machine: IMachine) {
     groundMesh.setParent(null);
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, {
         mass: 0,
-        friction: 0.5,
+        friction: 1,
     });
-    groundMesh.physicsImpostor.physicsBody.setRollingFriction(0.5);
 
     const wallMesh = scene.getMeshByName("Wall") as Mesh;
     wallMesh.setParent(null);
@@ -135,18 +134,20 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     ballMesh.material = materialAmiga;
 
-    // const ball = ballMesh.clone();
-    // ball.setParent(null);
-    // ball.position = new Vector3(0, 0.2, 0);
+    const ball = ballMesh.clone();
+    ball.setParent(null);
+    ball.position = new Vector3(0, 1, 0);
 
-    // ball.physicsImpostor = new PhysicsImpostor(
-    //     //
-    //     ball,
-    //     PhysicsImpostor.SphereImpostor,
-    //     {
-    //         mass: 0.1
-    //     } as any
-    // );
+    const impostor = new PhysicsImpostor(
+        //
+        ball,
+        PhysicsImpostor.SphereImpostor,
+        {
+            mass: 0.1,
+            friction: 1,
+        } as any
+    );
+    ball.physicsImpostor = impostor;
 
     // const ball2 = ballMesh.clone();
     // ball2.position = new Vector3(0.01, 0.5, 0);
@@ -166,8 +167,8 @@ async function createScene(engine: Engine, machine: IMachine) {
     // console.log(test.m_collisionFilterGroup);
     // console.log(test.m_collisionFilterMask);
 
-    // // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
-    // // ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
+    ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
+    ball.physicsImpostor.physicsBody.setDamping(0.4, 0.9);
 
     // const action = new ExecuteCodeAction(
     //     {
@@ -219,6 +220,8 @@ async function createScene(engine: Engine, machine: IMachine) {
 
         xr.input.onControllerAddedObservable.add((controller) => {
             controller.onMotionControllerInitObservable.add((motionController) => {
+                const linearVelocity = Vector3.Zero();
+                const angularVelocity = Vector3.Zero();
                 const squeezeComponent = motionController.getComponentOfType("squeeze");
                 if (squeezeComponent) {
                     squeezeComponent.onButtonStateChangedObservable.add(() => {
@@ -237,7 +240,7 @@ async function createScene(engine: Engine, machine: IMachine) {
                                 if (ball) {
                                     ball.setParent(null);
 
-                                    ball.physicsImpostor = new PhysicsImpostor(
+                                    const physicsImpostor = new PhysicsImpostor(
                                         //
                                         ball,
                                         PhysicsImpostor.SphereImpostor,
@@ -248,27 +251,21 @@ async function createScene(engine: Engine, machine: IMachine) {
                                         } as any
                                     );
 
-                                    ball.physicsImpostor.physicsBody.setRollingFriction(0.5);
-
                                     const controllerImposter = xrPhysics.getImpostorForController(controller)!;
 
-                                    const w = controllerImposter.getAngularVelocity()!;
-                                    const v = controllerImposter.getLinearVelocity()!;
+                                    const v = linearVelocity.addInPlace(
+                                        controllerImposter.getLinearVelocity()!.subtract(linearVelocity).scale(0.8) // exponential smoothing
+                                    );
 
-                                    // const r = new Vector3(0, 0, -0.1);
-                                    // r.rotateByQuaternionToRef(controller.grip?.rotationQuaternion!, r);
+                                    const w = angularVelocity.addInPlace(
+                                        controllerImposter.getAngularVelocity()!.subtract(angularVelocity).scale(0.8) // exponential smoothing
+                                    );
 
                                     const r = ball.position.subtract(controllerImposter.getObjectCenter());
 
-                                    // console.log("angular velocity", w);
-                                    // console.log("linear velocity", v);
-                                    // console.log("ball pos", ball.position);
-                                    // console.log("rotation q", controller.grip?.rotationQuaternion!);
-
-                                    // console.log("radius vector", r);
-
-                                    ball.physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
-                                    ball.physicsImpostor.setAngularVelocity(w);
+                                    physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
+                                    physicsImpostor.setAngularVelocity(w);
+                                    physicsImpostor.physicsBody.setDamping(0.4, 0.9);
 
                                     const actionManager = new ActionManager(scene);
 
@@ -288,15 +285,13 @@ async function createScene(engine: Engine, machine: IMachine) {
 
                                     actionManager.registerAction(action);
                                     ball.actionManager = actionManager;
+                                    ball.physicsImpostor = physicsImpostor;
 
                                     liveBalls.push(ball);
 
                                     setInterval(() => {
-                                        if (ball.physicsImpostor) {
-                                            // ball should collide with all
-                                            ball.physicsImpostor.physicsBody.getBroadphaseProxy().m_collisionFilterMask =
-                                                -1;
-                                        }
+                                        // Ball should collide with all
+                                        physicsImpostor.physicsBody.getBroadphaseProxy().m_collisionFilterMask = -1;
                                     }, 500);
                                 }
                             }
