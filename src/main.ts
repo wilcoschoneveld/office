@@ -95,7 +95,7 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     const shadowGenerator = enableShadows(scene);
 
-    const plantNode = scene.getNodeByName("Plant") as TransformNode;
+    const plantNode = scene.getTransformNodeByName("Plant")!;
     const plantRoot = createCompoundPhysics(plantNode);
 
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
@@ -193,7 +193,7 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     if (xr.baseExperience) {
         xr.baseExperience.onStateChangedObservable.add(() => {
-            machine.send({ name: "ChangeXRState", xr });
+            machine.send({ name: "ChangeXRStateEvent", xr });
         });
 
         const xrPhysics = xr.baseExperience.featuresManager.enableFeature(
@@ -213,9 +213,13 @@ async function createScene(engine: Engine, machine: IMachine) {
 
         xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
             // Move to the office
-            xrCamera.position.x = 0;
-            xrCamera.position.y = 0;
-            xrCamera.position.z = 0;
+            const playerStart = scene.getTransformNodeByName("player_start")!;
+            xrCamera.position = playerStart.position;
+            xrCamera.rotationQuaternion = playerStart.rotationQuaternion!;
+
+            const bucketWelcome = scene.getTransformNodeByName("bucket_welcome")!;
+            bucketRoot.position = bucketWelcome.position;
+            bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion;
         });
 
         const newBalls = new Map<WebXRInputSource, Mesh>();
@@ -282,7 +286,7 @@ async function createScene(engine: Engine, machine: IMachine) {
                                             },
                                         },
                                         () => {
-                                            machine.send({ name: "BallInBucket" });
+                                            machine.send({ name: "BallInBucketEvent" });
                                             actionManager.unregisterAction(action);
                                         }
                                     );
@@ -308,15 +312,25 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     scene.onAfterRenderObservable.add(() => {
         liveBalls = liveBalls.filter((ball, i) => {
-            const maxBalls = 25;
+            const maxBalls = 5;
             if (ball.position.y < -0.5 || liveBalls.length - maxBalls > i) {
                 // out of bounds
-                shadowGenerator.removeShadowCaster(ball);
                 ball.dispose();
                 return false;
             }
             return true;
         });
+    });
+
+    machine.subscribe((state) => {
+        if (state.currentState === "level") {
+            liveBalls.forEach((ball) => ball.dispose());
+            liveBalls = [];
+
+            const bucketLevel = scene.getTransformNodeByName(`bucket_level${state.levelNumber}`)!;
+            bucketRoot.position = bucketLevel.position;
+            bucketRoot.rotationQuaternion = bucketLevel.rotationQuaternion;
+        }
     });
 
     return scene;

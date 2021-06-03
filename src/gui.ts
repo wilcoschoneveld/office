@@ -19,6 +19,7 @@ export function createDebugGui(scene: Scene, machine: IMachine) {
     const width = 0.5;
     const height = 0.1;
     const plane = MeshBuilder.CreatePlane("plane", { width, height });
+    plane.isPickable = false;
     plane.position = new Vector3(0, -0.5, 1);
     plane.rotation = new Vector3(0, Tools.ToRadians(180), 0);
     plane.isVisible = false;
@@ -27,14 +28,13 @@ export function createDebugGui(scene: Scene, machine: IMachine) {
 
     var text1 = new TextBlock();
     text1.color = "white";
-    text1.fontSize = 50;
+    text1.fontSize = 40;
     text1.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
     text1.textVerticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-
     advancedTexture.addControl(text1);
 
     machine.subscribe((state) => {
-        text1.text = `state: ${state.currentState}`;
+        text1.text = `state: ${state.currentState} / level: ${state.levelNumber}`;
 
         if (state.xr && state.xr.baseExperience.state == WebXRState.IN_XR) {
             plane.isVisible = true;

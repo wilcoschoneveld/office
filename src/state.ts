@@ -1,28 +1,30 @@
-import { WebXRCamera, WebXRDefaultExperience, WebXRState } from "@babylonjs/core";
+import { Vector3, WebXRCamera, WebXRDefaultExperience, WebXRState } from "@babylonjs/core";
 
 interface IState {
     currentState: string;
     xr?: WebXRDefaultExperience;
+    levelNumber: number;
 }
 
 const initialState: IState = {
-    currentState: "sandbox",
+    currentState: "site",
+    levelNumber: 0,
 };
 
-type ChangeXRState = {
-    name: "ChangeXRState";
+type ChangeXRStateEvent = {
+    name: "ChangeXRStateEvent";
     xr: WebXRDefaultExperience;
 };
 
-type BallInBucket = {
-    name: "BallInBucket";
+type BallInBucketEvent = {
+    name: "BallInBucketEvent";
 };
 
-type InvokeReset = {
-    name: "InvokeReset";
+type InvokeNextLevelEvent = {
+    name: "InvokeNextLevelEvent";
 };
 
-type TEvent = ChangeXRState | BallInBucket | InvokeReset;
+type TEvent = ChangeXRStateEvent | BallInBucketEvent | InvokeNextLevelEvent;
 type TSubscriber = (state: IState) => void;
 
 export interface IMachine {
@@ -31,15 +33,37 @@ export interface IMachine {
 }
 
 const transition = (state: IState, event: TEvent): IState => {
-    if (event.name === "ChangeXRState") {
+    if (state.currentState === "site") {
+        if (event.name === "ChangeXRStateEvent" && event.xr.baseExperience.state === WebXRState.IN_XR) {
+            return {
+                ...state,
+                currentState: "welcome",
+                xr: event.xr,
+            };
+        }
+    }
+
+    if (event.name === "ChangeXRStateEvent" && event.xr.baseExperience.state === WebXRState.NOT_IN_XR) {
+        // TODO: reset camera to site view
         return {
             ...state,
-            xr: event.xr,
+            currentState: "site",
+            xr: undefined,
         };
     }
 
-    if (state.currentState === "sandbox") {
-        if (event.name === "BallInBucket") {
+    if (state.currentState === "welcome") {
+        if (event.name === "BallInBucketEvent") {
+            return {
+                ...state,
+                currentState: "level",
+                levelNumber: 1,
+            };
+        }
+    }
+
+    if (state.currentState === "level") {
+        if (event.name === "BallInBucketEvent") {
             return {
                 ...state,
                 currentState: "win",
@@ -48,10 +72,11 @@ const transition = (state: IState, event: TEvent): IState => {
     }
 
     if (state.currentState === "win") {
-        if (event.name === "InvokeReset") {
+        if (event.name === "InvokeNextLevelEvent") {
             return {
                 ...state,
-                currentState: "sandbox",
+                currentState: "level",
+                levelNumber: state.levelNumber + 1,
             };
         }
     }
@@ -63,7 +88,7 @@ const transition = (state: IState, event: TEvent): IState => {
 const invoke = async (state: IState, event: TEvent, send: (event: TEvent) => void) => {
     if (state.currentState === "win") {
         setTimeout(() => {
-            send({ name: "InvokeReset" });
+            send({ name: "InvokeNextLevelEvent" });
         }, 3000);
     }
 };
