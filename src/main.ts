@@ -85,7 +85,7 @@ async function createScene(engine: Engine, machine: IMachine) {
     await SceneLoader.AppendAsync("./", "office.glb");
     const shadowGenerator = enableShadows(scene);
 
-    const plantNode = scene.getTransformNodeByName("Plant")!;
+    const plantNode = scene.getTransformNodeByName("Plant1")!;
     const plantRoot = createCompoundPhysics(plantNode);
 
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
