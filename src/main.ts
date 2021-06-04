@@ -83,16 +83,6 @@ async function createScene(engine: Engine, machine: IMachine) {
     scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
     await SceneLoader.AppendAsync("./", "office.glb");
-    for (const node of scene.getNodes()) {
-        if (node instanceof Light) {
-            // node.intensity = Math.sqrt(node.intensity);
-        }
-
-        if (node instanceof Mesh && node.name.startsWith("Window")) {
-            node.isVisible = false;
-        }
-    }
-
     const shadowGenerator = enableShadows(scene);
 
     const plantNode = scene.getTransformNodeByName("Plant")!;
