@@ -78,6 +78,7 @@ async function createScene(engine: Engine, machine: IMachine) {
     light.groundColor = new Color3(1, 1, 1);
 
     const gravityVector = new Vector3(0, -9.81, 0);
+    // Cannot use cannon-es because it doesn't support compound physics bodies as nice
     const ammoModule = await import("ammo.js").then((Ammo) => new Ammo.default());
     scene.enablePhysics(gravityVector, new AmmoJSPlugin(true, ammoModule));
 
