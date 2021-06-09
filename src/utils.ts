@@ -1,6 +1,6 @@
 import { Mesh, PhysicsImpostor, TransformNode } from "@babylonjs/core";
 
-export function createCompoundPhysics(mesh: Mesh | TransformNode, mass = 1) {
+export function createCompoundPhysics(mesh: Mesh | TransformNode, mass = 1, friction = 0.5) {
     // Create a new root mesh
     const root = new Mesh(mesh.name + "__root__");
 
@@ -22,7 +22,10 @@ export function createCompoundPhysics(mesh: Mesh | TransformNode, mass = 1) {
     }
 
     // Add a root imposter to finish the compound physics object.
-    root.physicsImpostor = new PhysicsImpostor(root, PhysicsImpostor.NoImpostor, { mass });
+    root.physicsImpostor = new PhysicsImpostor(root, PhysicsImpostor.NoImpostor, {
+        mass,
+        friction,
+    });
 
     // Add the original mesh to the root.
     mesh.setParent(root);
