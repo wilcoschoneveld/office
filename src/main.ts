@@ -7,7 +7,6 @@ import {
     Engine,
     ExecuteCodeAction,
     HemisphericLight,
-    Light,
     Mesh,
     PhysicsImpostor,
     Scene,
@@ -23,7 +22,7 @@ import {
     WebXRInputSource,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-import { createConfetti, prepareConfetti } from "./confetti";
+import { prepareConfetti } from "./confetti";
 import { createDebugGui } from "./gui";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
@@ -85,9 +84,6 @@ async function createScene(engine: Engine, machine: IMachine) {
     await SceneLoader.AppendAsync("./", "office.glb");
     const shadowGenerator = enableShadows(scene);
 
-    const plantNode = scene.getTransformNodeByName("Plant1")!;
-    const plantRoot = createCompoundPhysics(plantNode);
-
     const groundMesh = scene.getMeshByName("Ground") as Mesh;
     groundMesh.setParent(null);
     groundMesh.physicsImpostor = new PhysicsImpostor(groundMesh, PhysicsImpostor.BoxImpostor, {
@@ -109,9 +105,6 @@ async function createScene(engine: Engine, machine: IMachine) {
         mass: 0,
         friction: 0.5,
     });
-
-    const bucketMesh = scene.getMeshByName("Bucket") as Mesh;
-    const bucketRoot = createCompoundPhysics(bucketMesh);
 
     const triggerMesh = scene.getMeshByName("trigger") as Mesh;
     triggerMesh.isVisible = false;
@@ -174,6 +167,17 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     // ball.actionManager = new ActionManager(scene);
     // ball.actionManager.registerAction(action);
+
+    for (const node of scene.getNodes()) {
+        if (node instanceof Mesh || node instanceof TransformNode) {
+            if (node.metadata?.gltf?.extras?.physics === 1) {
+                const mass = node.metadata.gltf.extras.mass ?? 1;
+                createCompoundPhysics(node, mass);
+            }
+        }
+    }
+
+    const bucketRoot = scene.getMeshByName("Bucket__root__")!;
 
     const xr = await WebXRDefaultExperience.CreateAsync(scene, {
         floorMeshes: [groundMesh],

@@ -1,6 +1,6 @@
 import { Mesh, PhysicsImpostor, TransformNode } from "@babylonjs/core";
 
-export function createCompoundPhysics(mesh: Mesh | TransformNode) {
+export function createCompoundPhysics(mesh: Mesh | TransformNode, mass = 1) {
     // Create a new root mesh
     const root = new Mesh(mesh.name + "__root__");
 
@@ -14,7 +14,7 @@ export function createCompoundPhysics(mesh: Mesh | TransformNode) {
 
         if (child.name.startsWith("hitbox")) {
             // Add a box physics imposter to the hitbox.
-            child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0.1 });
+            child.physicsImpostor = new PhysicsImpostor(child, PhysicsImpostor.BoxImpostor, { mass: 0 });
 
             // Hide the original hitbox mesh.
             child.isVisible = false;
@@ -22,7 +22,7 @@ export function createCompoundPhysics(mesh: Mesh | TransformNode) {
     }
 
     // Add a root imposter to finish the compound physics object.
-    root.physicsImpostor = new PhysicsImpostor(root, PhysicsImpostor.NoImpostor, { mass: 1 });
+    root.physicsImpostor = new PhysicsImpostor(root, PhysicsImpostor.NoImpostor, { mass });
 
     // Add the original mesh to the root.
     mesh.setParent(root);
