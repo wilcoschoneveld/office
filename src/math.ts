@@ -1,3 +1,5 @@
+import * as math from "mathjs";
+
 export function transpose(matrix: number[][]): number[][] {
     return matrix[0].map((_, i) => matrix.map((row) => row[i]));
 }
@@ -27,5 +29,12 @@ export function linearRegression(points: number[][], point_times: number[]): num
     const X = point_times.map((t) => [1, t]);
     const Xt = transpose(X);
     const theta = matmul(matmul(invert(matmul(Xt, X)), Xt), points);
+    return theta;
+}
+
+export function linearRegression3(points: number[][], point_times: number[]): number[][] {
+    const X = point_times.map((t) => [1, t, t * t]);
+    const Xt = math.transpose(X);
+    const theta = math.multiply(math.multiply(math.inv(math.multiply(Xt, X)), Xt), points);
     return theta;
 }

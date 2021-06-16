@@ -24,7 +24,7 @@ import {
 import "@babylonjs/loaders";
 import { prepareConfetti } from "./confetti";
 import { createDebugGui, createGui } from "./gui";
-import { linearRegression } from "./math";
+import { linearRegression, linearRegression3 } from "./math";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
 import { createCompoundPhysics } from "./utils";
@@ -185,7 +185,7 @@ async function createScene(engine: Engine, machine: IMachine) {
         floorMeshes: [groundMesh],
     });
 
-    const LINEAR_REGRESSION_BUFFER_SIZE = 5;
+    const LINEAR_REGRESSION_BUFFER_SIZE = 10;
 
     const newBalls: Array<{
         mesh: Mesh;
@@ -277,30 +277,23 @@ async function createScene(engine: Engine, machine: IMachine) {
 
                                 const points = [];
                                 const point_times = [];
-                                const start_time =
-                                    newBall.times[
-                                        Math.max(
-                                            0,
-                                            (newBall.frame - LINEAR_REGRESSION_BUFFER_SIZE) %
-                                                LINEAR_REGRESSION_BUFFER_SIZE
-                                        )
-                                    ];
+                                const end_time = newBall.times[(newBall.frame - 1) % LINEAR_REGRESSION_BUFFER_SIZE];
 
                                 console.log(newBall);
-                                console.log(start_time);
+                                console.log(end_time);
 
                                 const maxFrames = Math.min(newBall.frame, LINEAR_REGRESSION_BUFFER_SIZE);
                                 for (let i = 0; i < maxFrames; i++) {
                                     const ix = (newBall.frame - 1 - i) % LINEAR_REGRESSION_BUFFER_SIZE;
                                     const { x, y, z } = newBall.positions[ix];
                                     points.push([x, y, z]);
-                                    point_times.push((newBall.times[ix] - start_time) / 1000);
+                                    point_times.push((newBall.times[ix] - end_time) / 1000);
                                 }
 
                                 console.log(points);
                                 console.log(point_times);
 
-                                const theta = linearRegression(points, point_times);
+                                const theta = linearRegression3(points, point_times);
                                 console.log(theta);
 
                                 const [vx, vy, vz] = theta[1];
