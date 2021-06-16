@@ -24,6 +24,7 @@ import {
 import "@babylonjs/loaders";
 import { prepareConfetti } from "./confetti";
 import { createDebugGui, createGui } from "./gui";
+import { linearRegression } from "./math";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
 import { createCompoundPhysics } from "./utils";
@@ -184,6 +185,15 @@ async function createScene(engine: Engine, machine: IMachine) {
         floorMeshes: [groundMesh],
     });
 
+    const LINEAR_REGRESSION_BUFFER_SIZE = 5;
+
+    const newBalls: Array<{
+        mesh: Mesh;
+        controller: WebXRInputSource;
+        frame: number;
+        positions: Vector3[];
+        times: number[];
+    }> = [];
     let liveBalls: Array<Mesh> = [];
 
     if (xr.baseExperience) {
@@ -218,91 +228,149 @@ async function createScene(engine: Engine, machine: IMachine) {
             bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion!.clone();
         });
 
-        const newBalls = new Map<WebXRInputSource, Mesh>();
-
         xr.input.onControllerAddedObservable.add((controller) => {
             controller.onMotionControllerInitObservable.add((motionController) => {
                 const linearVelocity = Vector3.Zero();
                 const angularVelocity = Vector3.Zero();
-                const squeezeComponent = motionController.getComponentOfType("squeeze");
+                const squeezeComponent = motionController.getMainComponent();
+                // const squeezeComponent = motionController.getComponentOfType("squeeze");
                 if (squeezeComponent) {
                     squeezeComponent.onButtonStateChangedObservable.add(() => {
+                        // console.log(squeezeComponent.changes);
                         if (squeezeComponent.changes.pressed) {
                             if (squeezeComponent.pressed) {
                                 const newBall = ballMesh.clone();
                                 newBall.isVisible = true;
                                 newBall.setParent(controller.grip!);
                                 newBall.position = new Vector3(0, 0, -0.1);
-                                newBalls.set(controller, newBall);
+
+                                newBalls.push({
+                                    controller,
+                                    mesh: newBall,
+                                    frame: 0,
+                                    positions: [],
+                                    times: [],
+                                });
 
                                 shadowGenerator.addShadowCaster(newBall);
                             } else {
-                                const ball = newBalls.get(controller);
+                                const [newBall] = newBalls.splice(
+                                    newBalls.findIndex((b) => b.controller == controller),
+                                    1
+                                );
 
-                                if (ball) {
-                                    ball.setParent(null);
+                                const mesh = newBall.mesh;
+                                mesh.setParent(null);
 
-                                    const physicsImpostor = new PhysicsImpostor(
-                                        //
-                                        ball,
-                                        PhysicsImpostor.SphereImpostor,
-                                        {
-                                            mass: 0.1,
-                                            friction: 1,
-                                            restitution: 0.9,
-                                            group: 1, // dynamic group
-                                            mask: -1 ^ 4, // all but group 4 (controllers)
-                                        } as any
-                                    );
+                                const physicsImpostor = new PhysicsImpostor(
+                                    //
+                                    mesh,
+                                    PhysicsImpostor.SphereImpostor,
+                                    {
+                                        mass: 0.1,
+                                        friction: 1,
+                                        restitution: 0.9,
+                                        group: 1, // dynamic group
+                                        mask: -1 ^ 4, // all but group 4 (controllers)
+                                    } as any
+                                );
 
-                                    const controllerImposter = xrPhysics.getImpostorForController(controller)!;
+                                const points = [];
+                                const point_times = [];
+                                const start_time =
+                                    newBall.times[
+                                        Math.max(
+                                            0,
+                                            (newBall.frame - LINEAR_REGRESSION_BUFFER_SIZE) %
+                                                LINEAR_REGRESSION_BUFFER_SIZE
+                                        )
+                                    ];
 
-                                    const v = linearVelocity.addInPlace(
-                                        controllerImposter.getLinearVelocity()!.subtract(linearVelocity).scale(0.8) // exponential smoothing
-                                    );
+                                console.log(newBall);
+                                console.log(start_time);
 
-                                    const w = angularVelocity.addInPlace(
-                                        controllerImposter.getAngularVelocity()!.subtract(angularVelocity).scale(0.8) // exponential smoothing
-                                    );
-
-                                    const r = ball.position.subtract(controllerImposter.getObjectCenter());
-
-                                    physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
-                                    physicsImpostor.setAngularVelocity(w);
-                                    physicsImpostor.physicsBody.setDamping(0.4, 0.9);
-
-                                    const actionManager = new ActionManager(scene);
-
-                                    const action = new ExecuteCodeAction(
-                                        {
-                                            trigger: ActionManager.OnIntersectionEnterTrigger,
-                                            parameter: {
-                                                mesh: triggerMesh,
-                                                usePreciseIntersection: true,
-                                            },
-                                        },
-                                        () => {
-                                            machine.send({ name: "BallInBucketEvent" });
-                                            actionManager.unregisterAction(action);
-                                        }
-                                    );
-
-                                    actionManager.registerAction(action);
-                                    ball.actionManager = actionManager;
-                                    ball.physicsImpostor = physicsImpostor;
-
-                                    liveBalls.push(ball);
-
-                                    setInterval(() => {
-                                        // Ball should collide with all
-                                        physicsImpostor.physicsBody.getBroadphaseProxy().m_collisionFilterMask = -1;
-                                    }, 500);
+                                const maxFrames = Math.min(newBall.frame, LINEAR_REGRESSION_BUFFER_SIZE);
+                                for (let i = 0; i < maxFrames; i++) {
+                                    const ix = (newBall.frame - 1 - i) % LINEAR_REGRESSION_BUFFER_SIZE;
+                                    const { x, y, z } = newBall.positions[ix];
+                                    points.push([x, y, z]);
+                                    point_times.push((newBall.times[ix] - start_time) / 1000);
                                 }
+
+                                console.log(points);
+                                console.log(point_times);
+
+                                const theta = linearRegression(points, point_times);
+                                console.log(theta);
+
+                                const [vx, vy, vz] = theta[1];
+                                const linearVelocity = new Vector3(vx, vy, vz);
+                                physicsImpostor.setLinearVelocity(linearVelocity);
+
+                                // const controllerImposter = xrPhysics.getImpostorForController(controller)!;
+
+                                // const v = linearVelocity.addInPlace(
+                                //     controllerImposter.getLinearVelocity()!.subtract(linearVelocity).scale(0.8) // exponential smoothing
+                                // );
+
+                                // const w = angularVelocity.addInPlace(
+                                //     controllerImposter.getAngularVelocity()!.subtract(angularVelocity).scale(0.8) // exponential smoothing
+                                // );
+
+                                // const r = ball.position.subtract(controllerImposter.getObjectCenter());
+
+                                // physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
+                                // physicsImpostor.setAngularVelocity(w);
+
+                                physicsImpostor.physicsBody.setDamping(0.4, 0.9);
+
+                                const actionManager = new ActionManager(scene);
+
+                                const action = new ExecuteCodeAction(
+                                    {
+                                        trigger: ActionManager.OnIntersectionEnterTrigger,
+                                        parameter: {
+                                            mesh: triggerMesh,
+                                            usePreciseIntersection: true,
+                                        },
+                                    },
+                                    () => {
+                                        machine.send({ name: "BallInBucketEvent" });
+                                        actionManager.unregisterAction(action);
+                                    }
+                                );
+
+                                actionManager.registerAction(action);
+                                mesh.actionManager = actionManager;
+                                mesh.physicsImpostor = physicsImpostor;
+
+                                liveBalls.push(mesh);
+
+                                setInterval(() => {
+                                    // Ball should collide with all
+                                    physicsImpostor.physicsBody.getBroadphaseProxy().m_collisionFilterMask = -1;
+                                }, 500);
                             }
                         }
                     });
                 }
             });
+        });
+
+        xr.baseExperience.sessionManager.onXRFrameObservable.add((xrFrame) => {
+            for (const newBall of newBalls) {
+                const i = newBall.frame % LINEAR_REGRESSION_BUFFER_SIZE;
+
+                if (newBall.frame < LINEAR_REGRESSION_BUFFER_SIZE) {
+                    newBall.positions[i] = Vector3.Zero();
+                }
+
+                newBall.positions[i].copyFrom(newBall.mesh.getAbsolutePosition());
+                newBall.times[i] = xr.baseExperience.sessionManager.currentTimestamp;
+                newBall.frame += 1;
+                // console.log(newBall.positions);
+                // console.log(newBall.times);
+            }
         });
     }
 

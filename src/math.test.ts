@@ -108,9 +108,9 @@ test("linear regression", () => {
         [0.1, 0.3, 2.9],
     ];
 
-    const points_time = [1, 4];
+    const point_times = [1, 4];
 
-    const theta = linearRegression(points, points_time);
+    const theta = linearRegression(points, point_times);
 
     const X_expect = [
         // each row is [1, t]
@@ -129,9 +129,9 @@ test("linear regression same point", () => {
         [-0.5, 0.8, 2],
     ];
 
-    const points_time = [1, 4];
+    const point_times = [1, 4];
 
-    const theta = linearRegression(points, points_time);
+    const theta = linearRegression(points, point_times);
 
     const expected = [points[0], [0, 0, 0]];
 
@@ -144,9 +144,9 @@ test("linear regression fail", () => {
         [0.1, 0.3, 2.9],
     ];
 
-    const points_time = [1, 1];
+    const point_times = [1, 1];
 
-    expect(() => linearRegression(points, points_time)).toThrow(Error);
+    expect(() => linearRegression(points, point_times)).toThrow(Error);
 });
 
 export {};

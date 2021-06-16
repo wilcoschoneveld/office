@@ -23,8 +23,8 @@ export function invert(matrix: number[][]): number[][] {
     return result;
 }
 
-export function linearRegression(points: number[][], points_time: number[]): number[][] {
-    const X = points_time.map((t) => [1, t]);
+export function linearRegression(points: number[][], point_times: number[]): number[][] {
+    const X = point_times.map((t) => [1, t]);
     const Xt = transpose(X);
     const theta = matmul(matmul(invert(matmul(Xt, X)), Xt), points);
     return theta;
