@@ -187,6 +187,7 @@ async function createScene(engine: Engine, machine: IMachine) {
     let liveBalls: Array<Mesh> = [];
 
     if (xr.baseExperience) {
+        xr.pointerSelection.detach();
         xr.baseExperience.onStateChangedObservable.add(() => {
             machine.send({ name: "ChangeXRStateEvent", xr });
         });
