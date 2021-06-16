@@ -23,7 +23,7 @@ import {
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
 import { prepareConfetti } from "./confetti";
-import { createDebugGui } from "./gui";
+import { createDebugGui, createGui } from "./gui";
 import { createMachine, IMachine } from "./state";
 import "./style.css";
 import { createCompoundPhysics } from "./utils";
@@ -111,7 +111,7 @@ async function createScene(engine: Engine, machine: IMachine) {
     triggerMesh.isVisible = false;
 
     const ballMesh = scene.getMeshByName("Ball") as Mesh;
-    // ballMesh.isVisible = false;
+    ballMesh.isVisible = false;
 
     const materialAmiga = new StandardMaterial("amiga", scene);
     materialAmiga.diffuseTexture = new Texture("/amiga.jpeg", scene);
@@ -119,21 +119,21 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     ballMesh.material = materialAmiga;
 
-    const ball = ballMesh.clone();
-    ball.setParent(null);
-    ball.position = new Vector3(0, 1, 0);
+    // const ball = ballMesh.clone();
+    // ball.setParent(null);
+    // ball.position = new Vector3(0, 1, 0);
 
-    const impostor = new PhysicsImpostor(
-        //
-        ball,
-        PhysicsImpostor.SphereImpostor,
-        {
-            mass: 0.1,
-            friction: 1,
-            restitution: 0.9,
-        } as any
-    );
-    ball.physicsImpostor = impostor;
+    // const impostor = new PhysicsImpostor(
+    //     //
+    //     ball,
+    //     PhysicsImpostor.SphereImpostor,
+    //     {
+    //         mass: 0.1,
+    //         friction: 1,
+    //         restitution: 0.9,
+    //     } as any
+    // );
+    // ball.physicsImpostor = impostor;
 
     // const ball2 = ballMesh.clone();
     // ball2.position = new Vector3(0.01, 0.5, 0);
@@ -153,8 +153,8 @@ async function createScene(engine: Engine, machine: IMachine) {
     // console.log(test.m_collisionFilterGroup);
     // console.log(test.m_collisionFilterMask);
 
-    ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
-    ball.physicsImpostor.physicsBody.setDamping(0.4, 0.9);
+    // ball.physicsImpostor.setLinearVelocity(new Vector3(3, 0, 0));
+    // ball.physicsImpostor.physicsBody.setDamping(0.4, 0.9);
 
     // const action = new ExecuteCodeAction(
     //     {
@@ -209,12 +209,12 @@ async function createScene(engine: Engine, machine: IMachine) {
         xr.baseExperience.onInitialXRPoseSetObservable.add((xrCamera) => {
             // Move to the office
             const playerStart = scene.getTransformNodeByName("player_start")!;
-            xrCamera.position = playerStart.position;
-            xrCamera.rotationQuaternion = playerStart.rotationQuaternion!;
+            xrCamera.position = playerStart.position.clone();
+            xrCamera.rotationQuaternion = playerStart.rotationQuaternion!.clone();
 
             const bucketWelcome = scene.getTransformNodeByName("bucket_welcome")!;
-            bucketRoot.position = bucketWelcome.position;
-            bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion;
+            bucketRoot.position = bucketWelcome.position.clone();
+            bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion!.clone();
         });
 
         const newBalls = new Map<WebXRInputSource, Mesh>();
@@ -323,8 +323,8 @@ async function createScene(engine: Engine, machine: IMachine) {
             liveBalls = [];
 
             const bucketLevel = scene.getTransformNodeByName(`bucket_level${state.levelNumber}`)!;
-            bucketRoot.position = bucketLevel.position;
-            bucketRoot.rotationQuaternion = bucketLevel.rotationQuaternion;
+            bucketRoot.position = bucketLevel.position.clone();
+            bucketRoot.rotationQuaternion = bucketLevel.rotationQuaternion!.clone();
         }
     });
 
@@ -341,6 +341,8 @@ async function bootstrap() {
     // Add your code here matching the playground format
     const machine = createMachine();
     const scene = await createScene(engine, machine); //Call the createScene function
+
+    createGui(scene, machine);
 
     if (process.env.NODE_ENV === "development") {
         createDebugGui(scene, machine);
