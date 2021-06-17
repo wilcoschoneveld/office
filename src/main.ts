@@ -26,7 +26,6 @@ import { prepareConfetti } from "./confetti";
 import { createDebugGui, createGui } from "./gui";
 import { linearRegression, linearRegression3 } from "./math";
 import { createMachine, IMachine } from "./state";
-import "./style.css";
 import { createCompoundPhysics } from "./utils";
 
 function enableShadows(scene: Scene) {
@@ -386,6 +385,8 @@ async function bootstrap() {
 
     // Generate the BABYLON 3D engine
     const engine = new Engine(canvas, true);
+
+    document.getElementById("loading")!.remove();
 
     // Add your code here matching the playground format
     const machine = createMachine();
