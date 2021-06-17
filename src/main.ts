@@ -185,15 +185,30 @@ async function createScene(engine: Engine, machine: IMachine) {
         floorMeshes: [groundMesh],
     });
 
-    const LINEAR_REGRESSION_BUFFER_SIZE = 10;
+    const LINEAR_REGRESSION_BUFFER_SIZE = 6;
 
-    const newBalls: Array<{
+    interface IBall {
         mesh: Mesh;
         controller: WebXRInputSource;
         frame: number;
         positions: Vector3[];
         times: number[];
-    }> = [];
+    }
+
+    const newBalls: Array<IBall> = [];
+
+    function updateLinearRegressionBuffer(newBall: IBall) {
+        const i = newBall.frame % LINEAR_REGRESSION_BUFFER_SIZE;
+
+        if (newBall.frame < LINEAR_REGRESSION_BUFFER_SIZE) {
+            newBall.positions[i] = Vector3.Zero();
+        }
+
+        newBall.positions[i].copyFrom(newBall.mesh.getAbsolutePosition());
+        newBall.times[i] = xr.baseExperience.sessionManager.currentTimestamp;
+        newBall.frame += 1;
+    }
+
     let liveBalls: Array<Mesh> = [];
 
     if (xr.baseExperience) {
@@ -259,6 +274,8 @@ async function createScene(engine: Engine, machine: IMachine) {
                                     1
                                 );
 
+                                updateLinearRegressionBuffer(newBall);
+
                                 const mesh = newBall.mesh;
                                 mesh.setParent(null);
 
@@ -292,6 +309,7 @@ async function createScene(engine: Engine, machine: IMachine) {
 
                                 console.log(points);
                                 console.log(point_times);
+                                console.log(xr.baseExperience.sessionManager.currentTimestamp);
 
                                 const theta = linearRegression3(points, point_times);
                                 console.log(theta);
@@ -352,22 +370,11 @@ async function createScene(engine: Engine, machine: IMachine) {
 
         xr.baseExperience.sessionManager.onXRFrameObservable.add((xrFrame) => {
             for (const newBall of newBalls) {
-                const i = newBall.frame % LINEAR_REGRESSION_BUFFER_SIZE;
-
-                if (newBall.frame < LINEAR_REGRESSION_BUFFER_SIZE) {
-                    newBall.positions[i] = Vector3.Zero();
-                }
-
-                newBall.positions[i].copyFrom(newBall.mesh.getAbsolutePosition());
-                newBall.times[i] = xr.baseExperience.sessionManager.currentTimestamp;
-                newBall.frame += 1;
-                // console.log(newBall.positions);
-                // console.log(newBall.times);
+                updateLinearRegressionBuffer(newBall);
             }
         });
     }
-
-    scene.onAfterRenderObservable.add(() => {
+    scene.onBeforeRenderObservable.add(() => {
         liveBalls = liveBalls.filter((ball, i) => {
             const maxBalls = 5;
             if (ball.position.y < -0.5 || liveBalls.length - maxBalls > i) {
