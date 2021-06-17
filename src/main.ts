@@ -296,9 +296,6 @@ async function createScene(engine: Engine, machine: IMachine) {
                                 const point_times = [];
                                 const end_time = newBall.times[(newBall.frame - 1) % LINEAR_REGRESSION_BUFFER_SIZE];
 
-                                console.log(newBall);
-                                console.log(end_time);
-
                                 const maxFrames = Math.min(newBall.frame, LINEAR_REGRESSION_BUFFER_SIZE);
                                 for (let i = 0; i < maxFrames; i++) {
                                     const ix = (newBall.frame - 1 - i) % LINEAR_REGRESSION_BUFFER_SIZE;
@@ -307,31 +304,11 @@ async function createScene(engine: Engine, machine: IMachine) {
                                     point_times.push((newBall.times[ix] - end_time) / 1000);
                                 }
 
-                                console.log(points);
-                                console.log(point_times);
-                                console.log(xr.baseExperience.sessionManager.currentTimestamp);
-
                                 const theta = linearRegression3(points, point_times);
-                                console.log(theta);
 
                                 const [vx, vy, vz] = theta[1];
                                 const linearVelocity = new Vector3(vx, vy, vz);
                                 physicsImpostor.setLinearVelocity(linearVelocity);
-
-                                // const controllerImposter = xrPhysics.getImpostorForController(controller)!;
-
-                                // const v = linearVelocity.addInPlace(
-                                //     controllerImposter.getLinearVelocity()!.subtract(linearVelocity).scale(0.8) // exponential smoothing
-                                // );
-
-                                // const w = angularVelocity.addInPlace(
-                                //     controllerImposter.getAngularVelocity()!.subtract(angularVelocity).scale(0.8) // exponential smoothing
-                                // );
-
-                                // const r = ball.position.subtract(controllerImposter.getObjectCenter());
-
-                                // physicsImpostor.setLinearVelocity(v.add(w.cross(r)));
-                                // physicsImpostor.setAngularVelocity(w);
 
                                 physicsImpostor.physicsBody.setDamping(0.4, 0.9);
 
