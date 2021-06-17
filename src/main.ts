@@ -310,6 +310,9 @@ async function createScene(engine: Engine, machine: IMachine) {
                                 const linearVelocity = new Vector3(vx, vy, vz);
                                 physicsImpostor.setLinearVelocity(linearVelocity);
 
+                                const controllerImposter = xrPhysics.getImpostorForController(controller)!;
+                                physicsImpostor.setAngularVelocity(controllerImposter.getAngularVelocity());
+
                                 physicsImpostor.physicsBody.setDamping(0.4, 0.9);
 
                                 const actionManager = new ActionManager(scene);
