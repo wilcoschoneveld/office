@@ -74,6 +74,8 @@ async function createScene(engine: Engine, machine: IMachine) {
     camera.attachControl(true);
     camera.alpha = 0.5 * Math.PI;
     camera.beta = 1.381;
+    camera.lowerRadiusLimit = 5;
+    camera.upperRadiusLimit = 20;
 
     const light = new HemisphericLight("light", new Vector3(1, 1, 0), scene);
     light.intensity = 0.6;
@@ -365,6 +367,14 @@ async function createScene(engine: Engine, machine: IMachine) {
             }
             return true;
         });
+
+        for (const node of scene.getNodes()) {
+            if (node instanceof Mesh) {
+                if (node.position.y < -2) {
+                    node.dispose();
+                }
+            }
+        }
     });
 
     machine.subscribe((state) => {
@@ -398,9 +408,9 @@ async function createScene(engine: Engine, machine: IMachine) {
                 mesh,
                 PhysicsImpostor.SphereImpostor,
                 {
-                    mass: 0.5,
+                    mass: 0.3,
                     friction: 1,
-                    restitution: 0.5,
+                    restitution: 0.4,
                 } as any
             );
 
@@ -409,7 +419,7 @@ async function createScene(engine: Engine, machine: IMachine) {
             const direction = pointerInfo.pickInfo?.ray?.direction;
 
             if (direction) {
-                physicsImpostor.applyImpulse(direction.scale(20), camera.position);
+                physicsImpostor.applyImpulse(direction.scale(7), camera.position);
             }
 
             mesh.physicsImpostor = physicsImpostor;
