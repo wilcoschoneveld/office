@@ -66,15 +66,13 @@ async function createScene(engine: Engine, machine: IMachine) {
     const camera = new ArcRotateCamera(
         //
         "main",
-        0,
+        Math.PI / 4,
         Math.PI / 3,
         20,
         new Vector3(0, 0, 0),
         scene
     );
     camera.attachControl(true);
-    camera.alpha = 0.5 * Math.PI;
-    camera.beta = 1.381;
     camera.lowerRadiusLimit = 5;
     camera.upperRadiusLimit = 20;
 
@@ -488,6 +486,8 @@ async function bootstrap() {
     // Ready to remove loading screen
     const loadingDiv = document.getElementById("loading")!;
     loadingDiv.remove();
+
+    (window as any).open_info();
 
     prepareConfetti(scene, machine);
 }
