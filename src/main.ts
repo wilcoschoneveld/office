@@ -22,6 +22,7 @@ import {
     WebXRDefaultExperience,
     WebXRFeatureName,
     WebXRInputSource,
+    WebXRState,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
 import { prepareConfetti } from "./confetti";
@@ -389,6 +390,11 @@ async function createScene(engine: Engine, machine: IMachine) {
     });
 
     scene.onPointerObservable.add((pointerInfo) => {
+        if (xr.baseExperience && xr.baseExperience.state !== WebXRState.NOT_IN_XR) {
+            // Don't do anything when in XR
+            return;
+        }
+
         // shoot ball!
         if (pointerInfo.type == PointerEventTypes.POINTERTAP) {
             const mesh = ballMesh.clone();
