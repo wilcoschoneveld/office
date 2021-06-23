@@ -10,6 +10,7 @@ import {
     ILoadingScreen,
     Mesh,
     PhysicsImpostor,
+    PointerEventTypes,
     Scene,
     SceneLoader,
     ShadowGenerator,
@@ -374,6 +375,46 @@ async function createScene(engine: Engine, machine: IMachine) {
             const bucketLevel = scene.getTransformNodeByName(`bucket_level${state.levelNumber}`)!;
             bucketRoot.position = bucketLevel.position.clone();
             bucketRoot.rotationQuaternion = bucketLevel.rotationQuaternion!.clone();
+        }
+    });
+
+    scene.onPointerObservable.add((pointerInfo) => {
+        // shoot ball!
+        if (pointerInfo.type == PointerEventTypes.POINTERTAP) {
+            const mesh = ballMesh.clone();
+            mesh.scaling = new Vector3(3, 3, 3);
+            mesh.rotation = new Vector3(
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2
+            );
+            mesh.setParent(null);
+            mesh.isVisible = true;
+            mesh.position = camera.position.clone();
+            shadowGenerator.addShadowCaster(mesh);
+
+            const physicsImpostor = new PhysicsImpostor(
+                //
+                mesh,
+                PhysicsImpostor.SphereImpostor,
+                {
+                    mass: 0.5,
+                    friction: 1,
+                    restitution: 0.5,
+                } as any
+            );
+
+            physicsImpostor.physicsBody.setDamping(0.4, 0.9);
+
+            const direction = pointerInfo.pickInfo?.ray?.direction;
+
+            if (direction) {
+                physicsImpostor.applyImpulse(direction.scale(20), camera.position);
+            }
+
+            mesh.physicsImpostor = physicsImpostor;
+
+            liveBalls.push(mesh);
         }
     });
 
