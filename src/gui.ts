@@ -23,7 +23,7 @@ export function createGui(scene: Scene, machine: IMachine) {
 
     var description = new TextBlock();
     description.text =
-        "Hold the grip button to spawn a ball in your hand,\n" +
+        "Hold the main button to spawn a ball in your hand,\n" +
         "then swing your arm and release to throw!\n\n" +
         "The goal is to throw the ball in the bucket. ";
     description.color = "white";
