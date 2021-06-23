@@ -7,6 +7,7 @@ import {
     Engine,
     ExecuteCodeAction,
     HemisphericLight,
+    ILoadingScreen,
     Mesh,
     PhysicsImpostor,
     Scene,
@@ -379,14 +380,28 @@ async function createScene(engine: Engine, machine: IMachine) {
     return scene;
 }
 
+class CustomLoadingScreen implements ILoadingScreen {
+    displayLoadingUI() {
+        const loadingDiv = document.getElementById("loading")!;
+        loadingDiv.innerHTML = "Loading scene...";
+    }
+
+    hideLoadingUI() {
+        const loadingDiv = document.getElementById("loading")!;
+        // loadingDiv.remove();
+    }
+
+    loadingUIBackgroundColor = "#33334c";
+    loadingUIText = "";
+}
+
 async function bootstrap() {
     // Get the canvas element
     const canvas = document.getElementById("root") as HTMLCanvasElement;
 
     // Generate the BABYLON 3D engine
     const engine = new Engine(canvas, true);
-
-    document.getElementById("loading")!.remove();
+    engine.loadingScreen = new CustomLoadingScreen();
 
     // Add your code here matching the playground format
     const machine = createMachine();
@@ -408,12 +423,16 @@ async function bootstrap() {
         scene.render();
     });
 
-    prepareConfetti(scene, machine);
-
     // Watch for browser/canvas resize events
     window.addEventListener("resize", function () {
         engine.resize();
     });
+
+    // Ready to remove loading screen
+    const loadingDiv = document.getElementById("loading")!;
+    loadingDiv.remove();
+
+    prepareConfetti(scene, machine);
 }
 
 bootstrap();
