@@ -239,10 +239,6 @@ async function createScene(engine: Engine, machine: IMachine) {
             const playerStart = scene.getTransformNodeByName("player_start")!;
             xrCamera.position = playerStart.position.clone();
             xrCamera.rotationQuaternion = playerStart.rotationQuaternion!.clone();
-
-            const bucketWelcome = scene.getTransformNodeByName("bucket_welcome")!;
-            bucketRoot.position = bucketWelcome.position.clone();
-            bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion!.clone();
         });
 
         xr.input.onControllerAddedObservable.add((controller) => {
@@ -338,6 +334,7 @@ async function createScene(engine: Engine, machine: IMachine) {
                                 mesh.physicsImpostor = physicsImpostor;
 
                                 liveBalls.push(mesh);
+                                machine.send({ name: "NewBallEvent" });
 
                                 setInterval(() => {
                                     // Ball should collide with all
@@ -377,7 +374,14 @@ async function createScene(engine: Engine, machine: IMachine) {
     });
 
     machine.subscribe((state) => {
-        if (state.currentState === "level") {
+        if (state.currentState === "welcome" && state.actions.includes("update_bucket")) {
+            console.log("huh?");
+            const bucketWelcome = scene.getTransformNodeByName("bucket_welcome")!;
+            bucketRoot.position = bucketWelcome.position.clone();
+            bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion!.clone();
+        }
+
+        if (state.currentState === "level" && state.actions.includes("update_bucket")) {
             liveBalls.forEach((ball) => ball.dispose());
             liveBalls = [];
 

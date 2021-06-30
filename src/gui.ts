@@ -33,11 +33,20 @@ export function createGui(scene: Scene, machine: IMachine) {
 
     machine.subscribe((state) => {
         if (state.currentState === "welcome") {
-            plane.position = bucketRoot.position.clone();
-            plane.rotationQuaternion = bucketRoot.rotationQuaternion!.clone();
-            plane.rotate(Axis.Y, Tools.ToRadians(90));
-            plane.position.y += 1.5;
             plane.isVisible = true;
+
+            if (state.actions.includes("update_text")) {
+                plane.position = bucketRoot.position.clone();
+                plane.rotationQuaternion = bucketRoot.rotationQuaternion!.clone();
+                plane.rotate(Axis.Y, Tools.ToRadians(90));
+                plane.position.y += 1.5;
+
+                if (!state.newGame) {
+                    description.text =
+                        `Nice! You needed ${state.attempts} balls to finish.\n\n` +
+                        "Do you want to try again and improve your score?";
+                }
+            }
         } else {
             plane.isVisible = false;
         }

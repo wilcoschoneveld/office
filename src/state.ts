@@ -4,11 +4,17 @@ interface IState {
     currentState: string;
     xr?: WebXRDefaultExperience;
     levelNumber: number;
+    newGame: boolean;
+    attempts: number;
+    actions: string[];
 }
 
 const initialState: IState = {
     currentState: "site",
     levelNumber: 0,
+    newGame: true,
+    attempts: 0,
+    actions: [],
 };
 
 type ChangeXRStateEvent = {
@@ -24,7 +30,11 @@ type InvokeNextLevelEvent = {
     name: "InvokeNextLevelEvent";
 };
 
-type TEvent = ChangeXRStateEvent | BallInBucketEvent | InvokeNextLevelEvent;
+type NewBallEvent = {
+    name: "NewBallEvent";
+};
+
+type TEvent = ChangeXRStateEvent | BallInBucketEvent | InvokeNextLevelEvent | NewBallEvent;
 type TSubscriber = (state: IState) => void;
 
 export interface IMachine {
@@ -37,6 +47,7 @@ const transition = (state: IState, event: TEvent): IState => {
         if (event.name === "ChangeXRStateEvent" && event.xr.baseExperience.state === WebXRState.IN_XR) {
             return {
                 ...state,
+                actions: ["update_bucket", "update_text"],
                 currentState: "welcome",
                 xr: event.xr,
             };
@@ -47,6 +58,7 @@ const transition = (state: IState, event: TEvent): IState => {
         // TODO: reset camera to site view
         return {
             ...state,
+            actions: [],
             currentState: "site",
             xr: undefined,
         };
@@ -56,16 +68,26 @@ const transition = (state: IState, event: TEvent): IState => {
         if (event.name === "BallInBucketEvent") {
             return {
                 ...state,
+                actions: ["update_bucket"],
                 currentState: "level",
                 levelNumber: 1,
+                attempts: 0,
             };
         }
     }
 
     if (state.currentState === "level") {
+        if (event.name === "NewBallEvent") {
+            return {
+                ...state,
+                actions: [],
+                attempts: state.attempts + 1,
+            };
+        }
         if (event.name === "BallInBucketEvent") {
             return {
                 ...state,
+                actions: [],
                 currentState: "win",
             };
         }
@@ -73,8 +95,20 @@ const transition = (state: IState, event: TEvent): IState => {
 
     if (state.currentState === "win") {
         if (event.name === "InvokeNextLevelEvent") {
+            if (state.levelNumber >= 3) {
+                // end of game!
+                return {
+                    ...state,
+                    actions: ["update_bucket", "update_text"],
+                    currentState: "welcome",
+                    levelNumber: 0,
+                    newGame: false,
+                };
+            }
+
             return {
                 ...state,
+                actions: ["update_bucket"],
                 currentState: "level",
                 levelNumber: state.levelNumber + 1,
             };
@@ -82,7 +116,10 @@ const transition = (state: IState, event: TEvent): IState => {
     }
 
     console.log("unprocessed event", state, event);
-    return state;
+    return {
+        ...state,
+        actions: [],
+    };
 };
 
 const invoke = async (state: IState, event: TEvent, send: (event: TEvent) => void) => {
