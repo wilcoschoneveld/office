@@ -375,7 +375,6 @@ async function createScene(engine: Engine, machine: IMachine) {
 
     machine.subscribe((state) => {
         if (state.currentState === "welcome" && state.actions.includes("update_bucket")) {
-            console.log("huh?");
             const bucketWelcome = scene.getTransformNodeByName("bucket_welcome")!;
             bucketRoot.position = bucketWelcome.position.clone();
             bucketRoot.rotationQuaternion = bucketWelcome.rotationQuaternion!.clone();
