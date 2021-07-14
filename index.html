@@ -70,9 +70,23 @@
                 overflow-y: auto;
             }
 
+            .actions {
+                display: flex;
+                justify-content: flex-end;
+            }
+
             .button {
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            .link {
                 text-decoration: underline;
                 cursor: pointer;
+            }
+
+            .text-center {
+                text-align: center;
             }
         </style>
     </head>
@@ -82,10 +96,12 @@
             Created by Wilco Schoneveld <br />
             <a href="https://www.linkedin.com/in/wilcoschoneveld/">LinkedIn</a>
             <a href="https://github.com/wilcoschoneveld/office">GitHub</a>
+            <a href="https://dev.to/wilcoschoneveld/">DEV</a>
             <a href="https://medium.com/@wilcoschoneveld">Medium</a>
         </div>
-        <div id="info"><span class="button" onclick="open_info()">What is this?</span></div>
+        <div id="info"><span class="link" onclick="open_info()">What is this?</span></div>
         <div id="info-overlay">
+            <div class="actions"><span class="button" onclick="close_info()">X</span></div>
             <p>
                 This is a VR experience which can be played with any VR headset. A button will appear on the bottom
                 right to enter VR if it is available on this machine.
@@ -94,7 +110,11 @@
                 Alternatively, you can use your finger or mouse to look around and tap or click to shoot balls and mess
                 up the scene!
             </p>
-            <p><span class="button" onclick="close_info()">Close</span></p>
+            <p>
+                Click <a href="https://dev.to/wilcoschoneveld/challenges-of-a-web-vr-throwing-game-1c66">here</a> to
+                read about the development of this game.
+            </p>
+            <p class="text-center"><span class="link" onclick="close_info()">Got it</span></p>
         </div>
         <canvas id="root"></canvas>
         <script type="module" src="/src/main.ts"></script>
