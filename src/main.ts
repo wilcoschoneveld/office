@@ -458,7 +458,7 @@ async function bootstrap() {
     const canvas = document.getElementById("root") as HTMLCanvasElement;
 
     // Generate the BABYLON 3D engine
-    const engine = new Engine(canvas, true);
+    const engine = new Engine(canvas, true, undefined, true);
     engine.loadingScreen = new CustomLoadingScreen();
 
     // Add your code here matching the playground format
